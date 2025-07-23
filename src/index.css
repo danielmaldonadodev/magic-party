@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Beleren';
+  src: url('./assets/fonts/Beleren2016-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  html {
+    @apply text-gray-900 bg-black-light;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    @apply font-body min-h-screen;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-magical;
+  }
+}
+
+@layer components {
+  .mana-icon {
+    @apply inline-block w-6 h-6 rounded-full bg-contain bg-center bg-no-repeat;
+  }
+  
+  .card-frame {
+    @apply bg-black border rounded-card overflow-hidden shadow-card;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-blue-mana text-white rounded-md shadow-md hover:shadow-lg transition-all font-medium;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-black-light text-white rounded-md shadow-md hover:shadow-lg transition-all font-medium;
+  }
+  
+  .mana-orb {
+    @apply w-8 h-8 rounded-full inline-flex items-center justify-center animate-pulse-slow shadow-mana;
+  }
+  
+  .input-magical {
+    @apply w-full bg-black/30 border border-purple-500/50 rounded-md px-4 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent;
+  }
+}
+
+/* Magic color identity styles */
+.mana-w { @apply bg-white-mana text-black; }
+.mana-u { @apply bg-blue-mana text-white; }
+.mana-b { @apply bg-black-mana text-white; }
+.mana-r { @apply bg-red-mana text-white; }
+.mana-g { @apply bg-green-mana text-white; }
+.mana-c { @apply bg-colorless text-black; }
+.mana-m { @apply bg-multicolor text-black; }
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-black-light;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-blue-mana/50 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-blue-mana;
+}
