@@ -16,7 +16,7 @@ import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import DecksPage from './pages/DecksPage';
 // DeckDetailPage será implementado más adelante
-// ProfilePage será implementado más adelante
+
 import ArenaPage from './pages/ArenaPage';
 import GamePage from './pages/GamePage';
 // Páginas pendientes de implementar
@@ -81,9 +81,7 @@ function App() {
         <Route path="decks" element={<DecksPage />} />
         // TODO: Implementar ruta para detalles de mazos
         {/* <Route path="decks/:id" element={<DeckDetailPage />} /> */}
-        {/* Rutas de perfil temporalmente deshabilitadas hasta implementar ProfilePage */}
-        {/* <Route path="profile" element={<ProfilePage />} /> */}
-        {/* <Route path="profile/:id" element={<ProfilePage />} /> */}
+        {/* Rutas de perfil eliminadas */}
         <Route path="arena" element={<ArenaPage />} />
         <Route path="arena/:id" element={<GamePage />} />
         {/* Rutas pendientes de implementación */}
