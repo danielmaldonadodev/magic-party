@@ -16,12 +16,13 @@ import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import DecksPage from './pages/DecksPage';
 // DeckDetailPage será implementado más adelante
-import ProfilePage from './pages/ProfilePage';
+// ProfilePage será implementado más adelante
 import ArenaPage from './pages/ArenaPage';
 import GamePage from './pages/GamePage';
-import AchievementsPage from './pages/AchievementsPage';
-import SettingsPage from './pages/SettingsPage';
-import NotFoundPage from './pages/NotFoundPage';
+// Páginas pendientes de implementar
+// import AchievementsPage from './pages/AchievementsPage';
+// import SettingsPage from './pages/SettingsPage';
+// import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -80,16 +81,18 @@ function App() {
         <Route path="decks" element={<DecksPage />} />
         // TODO: Implementar ruta para detalles de mazos
         {/* <Route path="decks/:id" element={<DeckDetailPage />} /> */}
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="profile/:id" element={<ProfilePage />} />
+        {/* Rutas de perfil temporalmente deshabilitadas hasta implementar ProfilePage */}
+        {/* <Route path="profile" element={<ProfilePage />} /> */}
+        {/* <Route path="profile/:id" element={<ProfilePage />} /> */}
         <Route path="arena" element={<ArenaPage />} />
         <Route path="arena/:id" element={<GamePage />} />
-        <Route path="achievements" element={<AchievementsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        {/* Rutas pendientes de implementación */}
+        {/* <Route path="achievements" element={<AchievementsPage />} /> */}
+        {/* <Route path="settings" element={<SettingsPage />} /> */}
       </Route>
       
-      {/* 404 Not Found */}
-      <Route path="*" element={<NotFoundPage />} />
+      {/* 404 Not Found - Temporalmente redirigiendo a página principal */}
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 }
