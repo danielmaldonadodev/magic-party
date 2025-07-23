@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Añadir referencias explícitas para Tailwind v4 */
+@reference text-gray-900;
+@reference text-white;
+@reference text-black;
+@reference bg-black-light;
+@reference bg-blue-mana;
+@reference bg-white-mana;
+@reference bg-black-mana;
+@reference bg-red-mana;
+@reference bg-green-mana;
+@reference bg-colorless;
+@reference bg-multicolor;
+@reference bg-contain;
+@reference bg-center;
+@reference bg-no-repeat;
+@reference bg-black;
+@reference border;
+@reference rounded-card;
+@reference overflow-hidden;
+@reference shadow-card;
+@reference px-4;
+@reference py-2;
+@reference rounded-md;
+@reference shadow-md;
+@reference hover:shadow-lg;
+@reference transition-all;
+@reference font-medium;
+@reference w-8;
+@reference h-8;
+@reference rounded-full;
+@reference inline-flex;
+@reference items-center;
+@reference justify-center;
+@reference animate-pulse-slow;
+@reference shadow-mana;
+@reference w-full;
+@reference focus:ring-2;
+@reference focus:border-transparent;
+
 @font-face {
   font-family: 'Beleren';
   src: url('./assets/fonts/Beleren2016-Bold.ttf') format('truetype');
