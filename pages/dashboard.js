@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
+import Link from 'next/link'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -55,10 +56,10 @@ export default function Dashboard() {
       <nav>
         <ul style={{ listStyle: 'none', padding: 0 }}>
           <li>
-            <a href="/matches">📋 Ver Partidas</a>
+            <Link href="/matches/">Partidas</Link>
           </li>
           <li>
-            <a href="/stats">📊 Ver Estadísticas</a>
+            <Link href="/stats/">Estadísticas</Link>
           </li>
         </ul>
       </nav>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/router'
 import { UserPlus } from 'lucide-react'
+import Link from 'next/link'
 
 export default function SignUp() {
   const router = useRouter()
@@ -94,7 +95,9 @@ export default function SignUp() {
 
         <p className="mt-6 text-sm text-gray-600 text-center">
           ¿Ya tienes cuenta?{' '}
-          <a href="/login" className="text-primary font-medium hover:underline">Inicia sesión</a>
+          <Link href="/login" className="text-primary font-medium hover:underline">
+          Inicia sesión
+        </Link>
         </p>
       </div>
     </main>
