@@ -1,0 +1,21 @@
+/* styles/globals.css */
+
+/* 1) Indica dónde está tu config */
+@config "../tailwind.config.js";
+
+/* 2) Importa Tailwind v4 completo */
+@import "tailwindcss";
+
+/* 3) Capas base */
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+  a {
+    @apply text-primary hover:text-primary transition-colors duration-150;
+  }
+}

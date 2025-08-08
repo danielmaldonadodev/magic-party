@@ -1,0 +1,6 @@
+{
+  // Ignora las at-rules que VS Code no reconoce por defecto
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore"
+}
