@@ -1,14 +1,10 @@
+// pages/stats/index.js
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabaseClient'
+import PageHeader from '../../components/PageHeader'
+import Card from '../../components/Card'
 
-/**
- * Página de estadísticas globales (ruta: /stats)
- * - Contenedor de métricas dentro de .card
- * - Títulos con title-text / subtitle-text
- * - Botones .btn
- * - Skeleton de carga
- */
 export default function Stats() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -18,7 +14,6 @@ export default function Stats() {
     setLoading(true)
     setError(null)
     try {
-      // 1) Carga de datos base
       const [profilesRes, matchesRes, participantsRes, gamesRes] = await Promise.all([
         supabase.from('profiles').select('id, nickname'),
         supabase.from('matches').select('id, winner, played_at, game_id'),
@@ -28,7 +23,6 @@ export default function Stats() {
         supabase.from('games').select('id, name'),
       ])
 
-      // Manejo de errores individuales
       const anyError = profilesRes.error || matchesRes.error || participantsRes.error || gamesRes.error
       if (anyError) throw anyError
 
@@ -37,7 +31,7 @@ export default function Stats() {
       const participants = participantsRes.data || []
       const games = gamesRes.data || []
 
-      // 2) Acumulados por usuario
+      // Aggregations
       const winsCount = {}
       const damageCount = {}
       const killsCount = {}
@@ -58,7 +52,7 @@ export default function Stats() {
         playedMatchesByUser[uid] = [...(playedMatchesByUser[uid] || []), p.match_id]
       })
 
-      // 3) Racha máxima por usuario
+      // Streaks
       const playedById = Object.fromEntries(matches.map((m) => [m.id, m]))
       const streakByUser = {}
 
@@ -85,7 +79,7 @@ export default function Stats() {
       const playerLongest =
         profiles.find((p) => streakByUser[p.id] === longestStreak)?.nickname || 'Nadie'
 
-      // 4) Top jugadores por victorias
+      // Top players
       const topPlayers = profiles
         .map((p) => ({
           id: p.id,
@@ -99,7 +93,7 @@ export default function Stats() {
         .sort((a, b) => b.wins - a.wins)
         .slice(0, 10)
 
-      // 5) Comandantes (uso y victorias)
+      // Commanders
       const usageCount = {}
       const winsByCommander = {}
 
@@ -121,7 +115,7 @@ export default function Stats() {
         .sort((a, b) => b.wins - a.wins)
         .slice(0, 5)
 
-      // 6) Datos de partidas
+      // Match meta
       const totalMatches = matches.length
       const participantsCount = Object.values(
         participants.reduce((acc, p) => {
@@ -134,7 +128,7 @@ export default function Stats() {
         (participantsCount.length || 1)
       ).toFixed(1)
 
-      // 7) Juegos / formatos populares
+      // Games/formats
       const gameCount = {}
       matches.forEach((m) => {
         gameCount[m.game_id] = (gameCount[m.game_id] || 0) + 1
@@ -176,19 +170,15 @@ export default function Stats() {
     }
   }
 
-  useEffect(() => {
-    fetchStats()
-  }, [])
+  useEffect(() => { fetchStats() }, [])
 
-  // SKELETON
+  /* ───────────── Skeleton / Error ───────────── */
   if (loading) {
     return (
       <main className="max-w-6xl mx-auto p-4 sm:p-6">
-        <h1 className="title-text mb-2">📊 Estadísticas Globales</h1>
-        <p className="subtitle-text mb-6">Resumen de jugadores, comandantes y partidas.</p>
-
+        <PageHeader title="Estadísticas globales" description="Resumen de jugadores, comandantes y partidas." />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
+          {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="card p-4 animate-pulse grid gap-3">
               <div className="h-5 w-24 bg-gray-200 rounded" />
               <div className="h-8 bg-gray-200 rounded" />
@@ -202,125 +192,174 @@ export default function Stats() {
 
   if (error) {
     return (
-      <main className="max-w-3xl mx-auto p-4 sm:p-6">
-        <h1 className="title-text mb-2">📊 Estadísticas Globales</h1>
-        <div className="card p-4">
+      <main className="max-w-6xl mx-auto p-4 sm:p-6">
+        <PageHeader title="Estadísticas globales" />
+        <Card className="p-4">
           <p className="mb-4 text-red-700">{error}</p>
           <button className="btn" onClick={fetchStats}>Reintentar</button>
-        </div>
+        </Card>
       </main>
     )
   }
 
   if (!stats) return null
 
+  /* ───────────── UI ───────────── */
   return (
-    <main className="max-w-6xl mx-auto p-4 sm:p-6">
-      <header className="mb-6">
-        <h1 className="title-text mb-1">📊 Estadísticas Globales</h1>
-        <p className="subtitle-text">Resumen de jugadores, comandantes y partidas.</p>
-      </header>
+    <main className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
+      <PageHeader
+        title="Estadísticas globales"
+        description="Resumen de jugadores, comandantes y partidas."
+      />
 
       {/* Métrica destacada */}
       <section className="grid gap-4 lg:grid-cols-3">
-        <div className="card p-5 lg:col-span-2">
-          <h2 className="font-semibold mb-2">🥇 Racha más larga de victorias</h2>
-          <p>
-            {stats.playerLongest} – <strong>{stats.longestStreak}</strong> victorias consecutivas
+        <Card className="p-5 lg:col-span-2">
+          <h2 className="text-base font-semibold mb-1">🥇 Racha más larga de victorias</h2>
+          <p className="text-sm text-gray-700">
+            <span className="font-medium">{stats.playerLongest}</span> —{' '}
+            <span className="text-gray-900 font-bold">{stats.longestStreak}</span> victorias consecutivas
           </p>
-        </div>
-        <div className="card p-5 flex gap-3 items-center justify-between">
+        </Card>
+
+        <Card className="p-5 flex items-center justify-between">
           <span className="font-semibold">Total partidas</span>
           <span className="text-2xl font-bold">{stats.totalMatches}</span>
-        </div>
+        </Card>
       </section>
 
       {/* Top jugadores */}
-      <section className="mt-6 card p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold">🏅 Top 10 jugadores por victorias</h2>
-          <button className="btn" onClick={fetchStats}>Refrescar</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th className="py-2 pr-3">Pos</th>
-                <th className="py-2 pr-3">Jugador</th>
-                <th className="py-2 pr-3">V</th>
-                <th className="py-2 pr-3">Daño</th>
-                <th className="py-2 pr-3">Kills</th>
-                <th className="py-2 pr-3">Racha</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.topPlayers.map((p, idx) => (
-                <tr key={p.id} className="border-t">
-                  <td className="py-2 pr-3">{idx + 1}</td>
-                  <td className="py-2 pr-3">
-                    <Link href={`/players/${p.id}`} className="underline">
-                      {p.nickname}
-                    </Link>
-                  </td>
-                  <td className="py-2 pr-3">{p.wins}</td>
-                  <td className="py-2 pr-3">{p.totalDamage}</td>
-                  <td className="py-2 pr-3">{p.kills}</td>
-                  <td className="py-2 pr-3">{p.maxStreak}</td>
+      <section>
+        <Card className="p-0 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 sm:px-5 border-b">
+            <h2 className="text-base font-semibold">🏅 Top 10 jugadores por victorias</h2>
+            <button className="btn" onClick={fetchStats}>Refrescar</button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr className="text-left text-gray-600">
+                  <th className="py-2 pl-4 pr-3 sm:pl-5">Pos</th>
+                  <th className="py-2 pr-3">Jugador</th>
+                  <th className="py-2 pr-3">Victorias</th>
+                  <th className="py-2 pr-3">Daño total</th>
+                  <th className="py-2 pr-3">Kills</th>
+                  <th className="py-2 pr-4">Racha máx.</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {stats.topPlayers.map((p, idx) => (
+                  <tr key={p.id} className="border-t">
+                    <td className="py-2 pl-4 pr-3 sm:pl-5">{idx + 1}</td>
+                    <td className="py-2 pr-3">
+                      <Link href={`/players/${p.id}`} className="text-primary hover:underline">
+                        {p.nickname || 'Jugador'}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium">
+                        {p.wins}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3">{p.totalDamage}</td>
+                    <td className="py-2 pr-3">{p.kills}</td>
+                    <td className="py-2 pr-4">{p.maxStreak}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </section>
 
       {/* Comandantes */}
-      <section className="mt-6 grid gap-4 lg:grid-cols-2">
-        <div className="card p-5">
-          <h2 className="font-semibold mb-2">🧙 Comandantes más usados</h2>
-          <ul className="list-disc pl-5 text-sm">
-            {stats.topUsage.map((c) => (
-              <li key={c.commander}>
-                {c.commander} – {c.count} partidas
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="card p-5">
-          <h2 className="font-semibold mb-2">🏆 Comandantes con más victorias</h2>
-          <ul className="list-disc pl-5 text-sm">
-            {stats.topWinsCmd.map((c) => (
-              <li key={c.commander}>
-                {c.commander} – {c.wins} victorias
-              </li>
-            ))}
-          </ul>
-        </div>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-5">
+          <h2 className="text-base font-semibold mb-2">🧙 Comandantes más usados</h2>
+          {stats.topUsage.length === 0 ? (
+            <p className="text-sm text-gray-600">Sin datos.</p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {stats.topUsage.map((c) => (
+                <li key={c.commander}>
+                  <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs">
+                    {c.commander}
+                    <span className="ml-2 rounded-full bg-gray-900/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      {c.count}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card className="p-5">
+          <h2 className="text-base font-semibold mb-2">🏆 Comandantes con más victorias</h2>
+          {stats.topWinsCmd.length === 0 ? (
+            <p className="text-sm text-gray-600">Sin datos.</p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {stats.topWinsCmd.map((c) => (
+                <li key={c.commander}>
+                  <span className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs">
+                    {c.commander}
+                    <span className="ml-2 rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      {c.wins}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </section>
 
       {/* Datos de partidas */}
-      <section className="mt-6 grid gap-4 lg:grid-cols-2">
-        <div className="card p-5">
-          <h2 className="font-semibold">🎲 Participantes medios por partida</h2>
-          <p className="text-2xl font-bold">{stats.avgParticipants}</p>
-        </div>
-        <div className="card p-5">
-          <h2 className="font-semibold mb-2">🎮 Juegos populares</h2>
-          <ul className="list-disc pl-5 text-sm">
-            {stats.popularGames.map((g) => (
-              <li key={g.name}>
-                {g.name} – {g.count} partidas
-              </li>
-            ))}
-          </ul>
-          <h3 className="font-semibold mt-3">🎴 Formatos más jugados</h3>
-          <ul className="list-disc pl-5 text-sm">
-            {stats.topFormats.map((f) => (
-              <li key={f.format}>
-                {f.format} – {f.count} partidas
-              </li>
-            ))}
-          </ul>
-        </div>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-5">
+          <h2 className="text-base font-semibold">🎲 Participantes medios por partida</h2>
+          <p className="mt-1 text-2xl font-bold">{stats.avgParticipants}</p>
+        </Card>
+
+        <Card className="p-5">
+          <h2 className="text-base font-semibold mb-2">🎮 Juegos y formatos populares</h2>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1">Juegos</p>
+              {stats.popularGames.length === 0 ? (
+                <p className="text-sm text-gray-600">Sin datos.</p>
+              ) : (
+                <ul className="space-y-1 text-sm">
+                  {stats.popularGames.map((g) => (
+                    <li key={g.name} className="flex items-center justify-between">
+                      <span className="truncate">{g.name}</span>
+                      <span className="ml-3 rounded-full bg-gray-100 px-2 py-0.5 text-xs">{g.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1">Formatos</p>
+              {stats.topFormats.length === 0 ? (
+                <p className="text-sm text-gray-600">Sin datos.</p>
+              ) : (
+                <ul className="space-y-1 text-sm">
+                  {stats.topFormats.map((f) => (
+                    <li key={f.format} className="flex items-center justify-between">
+                      <span className="truncate">{f.format}</span>
+                      <span className="ml-3 rounded-full bg-gray-100 px-2 py-0.5 text-xs">{f.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </Card>
       </section>
     </main>
   )

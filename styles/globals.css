@@ -18,4 +18,84 @@
   a {
     @apply text-primary hover:text-primary transition-colors duration-150;
   }
+
+  /* --- FIX: quita spinners/adornos nativos --- */
+
+  /* Number (WebKit) */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  /* Number (Firefox) */
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  /* Search (WebKit) */
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+  }
+
+  /* Select sin flecha nativa (si los estilizas tú) */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: none;
+    background-color: inherit; /* evita fondos raros en Safari */
+  }
 }
+
+/* 4) Utilidad opcional para “matar” adornos en un bloque concreto (p.ej. header) */
+@layer utilities {
+  .no-native-controls, .no-native-controls * {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+}
+
+/* Esconde botones/flechas de la scrollbar SOLO en el nav */
+@layer utilities {
+  .nav-scroll {
+    scrollbar-width: thin;           /* Firefox */
+  }
+  .nav-scroll::-webkit-scrollbar {
+    height: 6px;                     /* ajusta si quieres */
+  }
+  .nav-scroll::-webkit-scrollbar-button {
+    display: none;                   /* ← quita ↑/↓ */
+    width: 0;
+    height: 0;
+  }
+  .nav-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,.15); border-radius: 100px;
+  }
+  .nav-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer utilities {
+  /* Oculta por completo cualquier scrollbar del nav en todos los motores */
+  .nav-scroll {
+    -ms-overflow-style: none !important; /* IE/Edge legacy */
+    scrollbar-width: none !important;    /* Firefox */
+  }
+  .nav-scroll::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;            /* WebKit/Chromium */
+    background: transparent !important;
+  }
+  .nav-scroll::-webkit-scrollbar-thumb,
+  .nav-scroll::-webkit-scrollbar-track,
+  .nav-scroll::-webkit-scrollbar-button {
+    display: none !important;
+    background: transparent !important;
+  }
+}
+
