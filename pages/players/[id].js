@@ -103,7 +103,7 @@ export default function PlayerProfile() {
   const [session, setSession] = useState(null)
   const [nickname, setNickname] = useState('')
 
-  // stats agregadas
+  // stats agregadas (view + agregados por usuario)
   const [stats, setStats] = useState(null)
 
   // ui
@@ -121,12 +121,8 @@ export default function PlayerProfile() {
       setSession(session || null)
 
       if (id === 'me') {
-        // si es /players/me y hay sesión, usamos ese id
-        if (session?.user?.id) {
-          setResolvedId(session.user.id)
-        } else {
-          setResolvedId(null) // sin sesión → CTA login
-        }
+        if (session?.user?.id) setResolvedId(session.user.id)
+        else setResolvedId(null) // sin sesión → CTA login
       } else {
         setResolvedId(id)
       }
@@ -140,18 +136,14 @@ export default function PlayerProfile() {
     return Boolean(session?.user?.id && resolvedId && session.user.id === resolvedId)
   }, [session, resolvedId])
 
-  /* ---------- 2) cargar datos del perfil + stats ---------- */
+  /* ---------- 2) cargar datos del perfil + stats (view + agregados) ---------- */
   useEffect(() => {
     let mounted = true
     const fetchData = async () => {
-      if (resolvedId === null) { // caso /me sin sesión
-        setLoading(false)
-        return
-      }
+      if (resolvedId === null) { setLoading(false); return } // /me sin sesión
       if (!resolvedId) return
 
-      setLoading(true)
-      setError(null)
+      setLoading(true); setError(null)
       try {
         // 2.1 Perfil
         const { data: profile, error: pErr } = await supabase
@@ -163,22 +155,32 @@ export default function PlayerProfile() {
         if (!mounted) return
         setNickname(profile?.nickname || 'Jugador')
 
-        // 2.2 Participaciones del jugador
-        const { data: matchesPlayed, error: mpErr } = await supabase
+        // 2.2 Stats agregadas desde la VIEW (fiable y barata)
+        const { data: psv, error: vErr } = await supabase
+          .from('player_stats_view')
+          .select('total_played, total_wins, win_rate')
+          .eq('id', resolvedId)
+          .maybeSingle()
+        if (vErr) throw vErr
+
+        // 2.3 Métricas adicionales desde match_participants (kills, first_to_die, daño máx)
+        const { data: parts, error: mpErr } = await supabase
           .from('match_participants')
-          .select('match_id, kills, max_damage, first_to_die, deck_commander, commander_image_small, commander_image_normal')
+          .select('match_id, kills, max_damage, first_to_die')
           .eq('user_id', resolvedId)
         if (mpErr) throw mpErr
 
-        // 2.3 Partidas ganadas por el jugador
-        const { data: matchesWon, error: mwErr } = await supabase
-          .from('matches')
-          .select('id, played_at')
-          .eq('winner', resolvedId)
-        if (mwErr) throw mwErr
+        // 2.4 Top comandantes del jugador desde commander_stats_by_user
+        const { data: topCmds, error: tcErr } = await supabase
+          .from('commander_stats_by_user')
+          .select('name, last_image_url, games_played')
+          .eq('user_id', resolvedId)
+          .order('games_played', { ascending: false })
+          .limit(6)
+        if (tcErr) throw tcErr
 
-        // 2.4 Detalle de partidas jugadas (para racha)
-        const matchIds = Array.from(new Set((matchesPlayed || []).map((m) => m.match_id)))
+        // 2.5 (Opcional) Detalle para racha
+        const matchIds = Array.from(new Set((parts || []).map(m => m.match_id))).filter(Boolean)
         let playedMatchesDetailed = []
         if (matchIds.length) {
           const { data: mDetail, error: mdErr } = await supabase
@@ -189,47 +191,38 @@ export default function PlayerProfile() {
           playedMatchesDetailed = mDetail || []
         }
 
-        // 2.5 Cálculos
-        const kills = (matchesPlayed || []).reduce((sum, m) => sum + (m.kills || 0), 0)
-        const firstToDie = (matchesPlayed || []).filter((m) => m.first_to_die).length
+        // ---- Cálculos UI ----
+        const totalGames = Number(psv?.total_played ?? 0)
+        const totalWins  = Number(psv?.total_wins ?? 0)
+        const winRate    = Number(psv?.win_rate ?? (totalGames ? (100 * totalWins / totalGames) : 0))
+
+        const kills = (parts || []).reduce((sum, m) => sum + (m.kills || 0), 0)
+        const firstToDie = (parts || []).filter(m => m.first_to_die).length
         const avgMaxDamage = (
-          (matchesPlayed || []).reduce((sum, m) => sum + (m.max_damage || 0), 0) /
-          ((matchesPlayed || []).length || 1)
+          (parts || []).reduce((sum, m) => sum + (m.max_damage || 0), 0) /
+          ((parts || []).length || 1)
         ).toFixed(1)
 
         const playedSorted = [...playedMatchesDetailed].sort(
           (a, b) => new Date(a.played_at) - new Date(b.played_at)
         )
-        let streak = 0
-        let maxStreak = 0
+        let streak = 0, maxStreak = 0
         for (const m of playedSorted) {
-          if (m.winner === resolvedId) {
-            streak += 1
-            if (streak > maxStreak) maxStreak = streak
-          } else {
-            streak = 0
-          }
+          if (m.winner === resolvedId) { streak++; if (streak > maxStreak) maxStreak = streak }
+          else { streak = 0 }
         }
 
-        const commanderCount = {}
-        const commanderFirstImage = {}
-        ;(matchesPlayed || []).forEach((m) => {
-          const name = m.deck_commander
-          if (!name) return
-          commanderCount[name] = (commanderCount[name] || 0) + 1
-          if (!commanderFirstImage[name]) {
-            commanderFirstImage[name] = m.commander_image_small || m.commander_image_normal || ''
-          }
-        })
-        const topCommanders = Object.entries(commanderCount)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 6)
-          .map(([name, count]) => ({ name, count, image: commanderFirstImage[name] || '' }))
+        const topCommanders = (topCmds || []).map(c => ({
+          name: c.name,
+          count: Number(c.games_played || 0),
+          image: c.last_image_url || ''
+        }))
 
         if (!mounted) return
         setStats({
-          totalGames: matchesPlayed?.length || 0,
-          totalWins: matchesWon?.length || 0,
+          totalGames,
+          totalWins,
+          winRate,         // ← winrate fiable desde la view
           maxStreak,
           kills,
           firstToDie,
@@ -285,7 +278,7 @@ export default function PlayerProfile() {
 
   /* ---------- 4) UI perfil ---------- */
   const currentTab = (tab === 'edit' && isOwner) ? 'edit' : 'stats'
-  const winrate = stats.totalGames ? ((stats.totalWins / stats.totalGames) * 100) : 0
+  const winrate = Number.isFinite(stats.winRate) ? stats.winRate : (stats.totalGames ? ((stats.totalWins / stats.totalGames) * 100) : 0)
   const winBar =
     winrate >= 70 ? 'from-emerald-400 to-emerald-500' :
     winrate >= 50 ? 'from-amber-400 to-amber-500' :
@@ -476,7 +469,7 @@ function EditProfileForm({ initialNickname, onSaved }) {
         </label>
       </div>
 
-      {/* Barra de acciones con estilo mejorado */}
+      {/* Barra de acciones */}
       <div className="flex items-center justify-end gap-3 border-t border-gray-200/70 bg-gray-50 px-4 py-3 sm:px-5">
         <button
           type="button"
@@ -507,3 +500,4 @@ function EditProfileForm({ initialNickname, onSaved }) {
     </Card>
   )
 }
+  

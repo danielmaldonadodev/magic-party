@@ -11,7 +11,6 @@ function toDatetimeLocal(d = new Date()) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-// Preview con proporción de carta (63:88) y sin <img> roto
 function CommanderPreview({ name, small, normal, art }) {
   const src = small || normal || art || ''
   if (!src) {
@@ -54,7 +53,6 @@ export default function NewMatch() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Hydration-safe: sin fecha por defecto en SSR
   const [form, setForm] = useState({ game_id: '', played_at: '', winner: '' })
   const [participants, setParticipants] = useState([])
 
@@ -68,11 +66,11 @@ export default function NewMatch() {
     commander_name: '',
     scryfall_id: '',
     used_proxies: false,
-    life_remaining: 0,
-    max_damage: 0,
+    life_remaining: '', // antes 0
+    max_damage: '',     // antes 0
     first_to_die: false,
     won_by_combo: false,
-    kills: 0,
+    kills: '',          // antes 0
   })
 
   useEffect(() => {
@@ -91,7 +89,7 @@ export default function NewMatch() {
         setForm((f) => ({ ...f, game_id: f.game_id || gData[0].id }))
       }
       if (pData) setProfiles(pData)
-      setForm((f) => ({ ...f, played_at: f.played_at || toDatetimeLocal() })) // fija fecha local en cliente
+      setForm((f) => ({ ...f, played_at: f.played_at || toDatetimeLocal() }))
       setParticipants((cur) => (cur.length ? cur : [blankParticipant()]))
       setLoading(false)
     }
@@ -143,7 +141,11 @@ export default function NewMatch() {
     if (!participants.length || participants.some((p) => !p.user_id))
       return setError('Selecciona jugador para cada participante.')
 
-    // 1) Crear match
+    const uniquePlayers = new Set(participants.map((p) => p.user_id).filter(Boolean))
+    if (uniquePlayers.size < 2) {
+      return setError('Debes añadir al menos dos jugadores diferentes.')
+    }
+
     const { data: matchData, error: insertError } = await supabase
       .from('matches')
       .insert({
@@ -156,7 +158,6 @@ export default function NewMatch() {
       .single()
     if (insertError) return setError(insertError.message)
 
-    // 2) Insertar participantes
     const payload = participants.map((p) => ({
       match_id: matchData.id,
       user_id: p.user_id,
@@ -173,35 +174,28 @@ export default function NewMatch() {
       commander_name: p.commander_name || p.deck_commander || null,
       scryfall_id: p.scryfall_id || null,
       used_proxies: !!p.used_proxies,
-      life_remaining: Number(p.life_remaining) || 0,
-      max_damage: Number(p.max_damage) || 0,
+      life_remaining: p.life_remaining === '' ? null : Number(p.life_remaining),
+      max_damage: p.max_damage === '' ? null : Number(p.max_damage),
       first_to_die: !!p.first_to_die,
       won_by_combo: !!p.won_by_combo,
-      kills: Number(p.kills) || 0,
+      kills: p.kills === '' ? null : Number(p.kills),
     }))
     const { error: participantsError } = await supabase.from('match_participants').insert(payload)
     if (participantsError) return setError(participantsError.message)
 
-    // 3) Actualizar estadísticas agregadas (RPC)
-    //    No bloqueamos la navegación si falla; lo registramos para revisar.
     const { error: statsError } = await supabase.rpc('update_commander_stats', {
       p_match_id: matchData.id
     })
-    if (statsError) {
-      console.error('update_commander_stats error', statsError)
-      // Opcional: setError('La partida se guardó pero falló la actualización de estadísticas.')
-    }
+    if (statsError) console.error('update_commander_stats error', statsError)
 
-    // 4) Navegar
     router.push('/matches')
   }
 
   return (
     <main className="mx-auto max-w-5xl p-4 sm:p-6">
-      {/* HERO */}
       <PageHeader
-          title="Nueva partida"
-          description="Registra una partida, añade participantes y su comandante."
+        title="Nueva partida"
+        description="Registra una partida, añade participantes y su comandante."
       />
 
       {error && (
@@ -210,7 +204,7 @@ export default function NewMatch() {
         </div>
       )}
 
-      {/* DATOS GENERALES */}
+      {/* Datos generales */}
       <section className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-6">
         <header className="px-5 py-4 border-b">
           <h2 className="title-text text-base">Datos generales</h2>
@@ -218,7 +212,7 @@ export default function NewMatch() {
         </header>
 
         <div className="p-5 grid gap-5 sm:grid-cols-2">
-          <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3 transition focus-within:border-primary/50 focus-within:bg-white focus-within:shadow-sm">
+          <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3">
             <label className="text-sm font-medium block mb-1.5">Juego</label>
             <select
               name="game_id"
@@ -232,7 +226,7 @@ export default function NewMatch() {
             </select>
           </div>
 
-          <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3 transition focus-within:border-primary/50 focus-within:bg-white focus-within:shadow-sm">
+          <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3">
             <label className="text-sm font-medium block mb-1.5">Fecha y hora</label>
             <input
               type="datetime-local"
@@ -244,7 +238,7 @@ export default function NewMatch() {
             />
           </div>
 
-          <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3 transition sm:col-span-2 focus-within:border-primary/50 focus-within:bg-white focus-within:shadow-sm">
+          <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3 sm:col-span-2">
             <label className="text-sm font-medium block mb-1.5">Ganador</label>
             <select
               name="winner"
@@ -256,12 +250,14 @@ export default function NewMatch() {
               <option value="">— Selecciona —</option>
               {profiles.map((p) => <option key={p.id} value={p.id}>{p.nickname}</option>)}
             </select>
-            <p className="text-xs opacity-70 mt-1.5">Se usará en el listado para mostrar la imagen del ganador.</p>
+            <p className="text-xs opacity-70 mt-1.5">
+              Se usará en el listado para mostrar la imagen del ganador.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* PARTICIPANTES */}
+      {/* Participantes */}
       <section className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <header className="px-5 py-4 border-b flex items-start justify-between gap-3">
           <div>
@@ -279,20 +275,10 @@ export default function NewMatch() {
 
         <div className="divide-y">
           {loading ? (
-            <div className="p-5 grid gap-4 sm:grid-cols-2">
-              {[...Array(2)].map((_, i) => (
-                <div key={i} className="card p-4 animate-pulse grid gap-3">
-                  <div className="h-5 w-24 bg-gray-200 rounded" />
-                  <div className="h-10 bg-gray-200 rounded" />
-                  <div className="h-5 w-36 bg-gray-200 rounded mt-2" />
-                  <div className="h-10 bg-gray-200 rounded" />
-                </div>
-              ))}
-            </div>
+            <div className="p-5">Cargando...</div>
           ) : (
             participants.map((p, index) => (
               <fieldset key={index} className="p-5">
-                {/* Header del participante */}
                 <div className="mb-4 flex items-center justify-between">
                   <div className="inline-flex items-center gap-2">
                     <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-gray-100 border">#{index + 1}</span>
@@ -305,10 +291,8 @@ export default function NewMatch() {
                   )}
                 </div>
 
-                {/* Cuerpo */}
                 <div className="grid gap-5 lg:grid-cols-[1fr_1fr_280px]">
-                  {/* Columna 1: Jugador */}
-                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3 transition focus-within:border-primary/50 focus-within:bg-white focus-within:shadow-sm">
+                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3">
                     <label className="text-sm font-medium block mb-1.5">Jugador</label>
                     <select
                       value={p.user_id}
@@ -317,25 +301,25 @@ export default function NewMatch() {
                       className="input"
                     >
                       <option value="">— Selecciona —</option>
-                      {profiles.map((pp) => <option key={pp.id} value={pp.id}>{pp.nickname}</option>)}
+                      {profiles
+                        .filter((pp) => pp.id === p.user_id || !participants.some((x) => x.user_id === pp.id))
+                        .map((pp) => (
+                          <option key={pp.id} value={pp.id}>{pp.nickname}</option>
+                        ))}
                     </select>
                   </div>
 
-                  {/* Columna 2: Comandante */}
-                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3 transition focus-within:border-primary/50 focus-within:bg-white focus-within:shadow-sm">
+                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3">
                     <label className="text-sm font-medium block mb-1.5">Carta insignia / Comandante</label>
                     <CardSearchInput
-                      key={`${p.scryfall_id || 'none'}-${index}`} // ← fuerza remount al seleccionar y no reabre
+                      key={`${p.scryfall_id || 'none'}-${index}`}
                       value={p.commander_name || p.deck_commander || ''}
                       placeholder="Buscar carta"
-                      // FIX doble clic: solo usamos onSelect
                       onSelect={(card) => onSelectCommander(index, card)}
                       closeOnSelect
                     />
-                    <p className="text-xs opacity-70 mt-1.5">Selecciona de la lista. Se cerrará automáticamente.</p>
                   </div>
 
-                  {/* Columna 3: Preview */}
                   <div className="rounded-lg border-l-4 border-primary/40 pl-4">
                     <CommanderPreview
                       name={p.commander_name}
@@ -346,38 +330,40 @@ export default function NewMatch() {
                   </div>
                 </div>
 
-                {/* Métricas y toggles */}
                 <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3 transition focus-within:border-primary/50 focus-within:bg-white">
+                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3">
                     <label className="text-sm font-medium block mb-1.5">Vidas restantes</label>
                     <input
                       type="number"
                       value={p.life_remaining}
-                      onChange={(e) => updateParticipant(index, 'life_remaining', parseInt(e.target.value) || 0)}
+                      onChange={(e) => updateParticipant(index, 'life_remaining', e.target.value)}
                       min="0"
-                      className="input"
+                      placeholder="—"
+                      className="input text-right"
                     />
                   </div>
 
-                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3 transition focus-within:border-primary/50 focus-within:bg-white">
+                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3">
                     <label className="text-sm font-medium block mb-1.5">Daño máximo en un turno</label>
                     <input
                       type="number"
                       value={p.max_damage}
-                      onChange={(e) => updateParticipant(index, 'max_damage', parseInt(e.target.value) || 0)}
+                      onChange={(e) => updateParticipant(index, 'max_damage', e.target.value)}
                       min="0"
-                      className="input"
+                      placeholder="—"
+                      className="input text-right"
                     />
                   </div>
 
-                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3 transition focus-within:border-primary/50 focus-within:bg-white">
+                  <div className="group rounded-lg border border-gray-200 bg-gray-50/40 p-3">
                     <label className="text-sm font-medium block mb-1.5">Número de kills</label>
                     <input
                       type="number"
                       value={p.kills}
-                      onChange={(e) => updateParticipant(index, 'kills', parseInt(e.target.value) || 0)}
+                      onChange={(e) => updateParticipant(index, 'kills', e.target.value)}
                       min="0"
-                      className="input"
+                      placeholder="—"
+                      className="input text-right"
                     />
                   </div>
 
@@ -413,7 +399,6 @@ export default function NewMatch() {
           )}
         </div>
 
-        {/* Barra de acciones */}
         <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t bg-white p-4">
           <button
             type="button"
@@ -424,7 +409,7 @@ export default function NewMatch() {
           </button>
           <button
             type="submit"
-            className="btn btn-primary px-5 py-2.5 text-sm font-semibold shadow-sm hover:shadow-md active:shadow"
+            className="btn btn-primary px-6 py-2.5 text-sm font-medium shadow-sm hover:shadow-md"
             onClick={handleSubmit}
           >
             Guardar partida
