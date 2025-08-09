@@ -127,57 +127,56 @@ export default function Navbar() {
   const isActive = (href) => router.asPath === href || router.asPath.startsWith(`${href}/`)
 
   return (
-    <header
-      className={[
-        'fixed inset-x-0 top-0 z-50 h-16 border-b border-transparent',
-        'bg-white/65 backdrop-blur-xl supports-[backdrop-filter]:bg-white/55',
-        'transition-all duration-200',
-        scrolled ? 'shadow-[0_6px_24px_-8px_rgba(0,0,0,0.18)] border-gray-200/70' : 'shadow-none',
-      ].join(' ')}
-      role="banner"
-    >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+    <>
+      <header
+        className={[
+          'fixed inset-x-0 top-0 z-[70] h-16 border-b border-transparent',
+          'bg-white/65 backdrop-blur-xl supports-[backdrop-filter]:bg-white/55',
+          'transition-all duration-200 overflow-x-clip',
+          scrolled ? 'shadow-[0_6px_24px_-8px_rgba(0,0,0,0.18)] border-gray-200/70' : 'shadow-none',
+        ].join(' ')}
+        role="banner"
+      >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
-      <div className="max-w-7xl mx-auto h-full px-3 sm:px-4 lg:px-6">
-        <div className="flex h-full items-center justify-between gap-3">
-          <Link
-            href="/"
-            className="group inline-flex items-center gap-2 text-lg sm:text-xl font-semibold text-primary"
-          >
-            <span className="inline-grid place-items-center w-8 h-8 rounded-xl bg-primary/10 ring-1 ring-primary/15 transition-transform group-hover:scale-[1.02]">
-              <Icons.Sparkles size={18} className="opacity-90" aria-hidden="true" />
-            </span>
-            <span className="whitespace-nowrap">Magic Party</span>
-          </Link>
+        <div className="max-w-7xl mx-auto h-full px-3 sm:px-4 lg:px-6">
+          <div className="flex h-full items-center gap-3 px-1">
+            <Link
+              href="/"
+              className="group inline-flex items-center gap-2 text-lg sm:text-xl font-semibold text-primary shrink-0"
+            >
+              <span className="inline-grid place-items-center w-8 h-8 rounded-xl bg-primary/10 ring-1 ring-primary/15 transition-transform group-hover:scale-[1.02]">
+                <Icons.Sparkles size={18} className="opacity-90" aria-hidden="true" />
+              </span>
+              <span className="whitespace-nowrap">Magic Party</span>
+            </Link>
 
-          {/* NAV adaptado */}
-          <nav
-            className="hidden md:flex flex-wrap items-center gap-x-1 gap-y-2 max-w-[60vw] lg:max-w-[70vw] xl:max-w-none"
-            aria-label="Principal"
-          >
-            {NAV_ITEMS.map(({ href, label, Icon }) => (
-              <NavLink
-                key={href}
-                href={href}
-                variant="default"
-                className={[
-                  'relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg transition',
-                  isActive(href)
-                    ? 'bg-gray-900 text-white shadow-sm ring-1 ring-black/10'
-                    : 'text-gray-800 hover:bg-gray-100/80 ring-1 ring-transparent hover:ring-gray-200',
-                ].join(' ')}
-              >
-                <Icon size={18} aria-hidden="true" />
-                <span className="hidden sm:inline text-sm lg:text-[15px] font-medium">{label}</span>
-                {isActive(href) && (
-                  <span className="absolute -bottom-[7px] left-1/2 h-[3px] w-6 -translate-x-1/2 rounded-full bg-primary/90" />
-                )}
-              </NavLink>
-            ))}
-          </nav>
+            <nav
+              className="hidden lg:flex flex-1 min-w-0 items-center justify-center flex-wrap gap-x-1 gap-y-2 overflow-hidden"
+              aria-label="Principal"
+            >
+              {NAV_ITEMS.map(({ href, label, Icon }) => (
+                <NavLink
+                  key={href}
+                  href={href}
+                  variant="default"
+                  className={[
+                    'relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg transition',
+                    isActive(href)
+                      ? 'bg-gray-900 text-white shadow-sm ring-1 ring-black/10'
+                      : 'text-gray-800 hover:bg-gray-100/80 ring-1 ring-transparent hover:ring-gray-200',
+                  ].join(' ')}
+                >
+                  <Icon size={18} aria-hidden="true" />
+                  <span className="hidden xl:inline text-sm lg:text-[15px] font-medium">{label}</span>
+                  {isActive(href) && (
+                    <span className="absolute -bottom-[7px] left-1/2 h-[3px] w-6 -translate-x-1/2 rounded-full bg-primary/90" />
+                  )}
+                </NavLink>
+              ))}
+            </nav>
 
-          <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2 shrink-0">
               {!user ? (
                 <>
                   <NavLink
@@ -206,14 +205,14 @@ export default function Navbar() {
                     <div className="w-8 h-8 rounded-full bg-primary text-white grid place-items-center text-sm font-semibold ring-1 ring-black/10 group-hover:brightness-105 transition">
                       {initial}
                     </div>
-                    <span className="hidden sm:inline text-sm font-medium max-w-[22ch] truncate">{displayName}</span>
+                    <span className="hidden xl:inline text-sm font-medium max-w-[22ch] truncate">{displayName}</span>
                     <Icons.ChevronDown size={16} className="opacity-80 group-hover:opacity-100 transition" aria-hidden="true" />
                   </button>
 
                   {userMenuOpen && (
                     <div
                       role="menu"
-                      className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-xl ring-1 ring-black/10 p-2 z-50"
+                      className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-xl ring-1 ring-black/10 p-2 z-[80]"
                     >
                       <div className="px-2.5 py-2.5 mb-1 rounded-lg bg-gray-50 ring-1 ring-gray-200/60">
                         <p className="text-xs uppercase tracking-wide text-gray-500">Conectado como</p>
@@ -244,18 +243,18 @@ export default function Navbar() {
 
             <button
               type="button"
-              className="md:hidden p-2 rounded-lg ring-1 ring-transparent hover:ring-gray-200"
+              className="lg:hidden p-2 rounded-lg ring-1 ring-transparent hover:ring-gray-200"
               onClick={() => setMobileOpen(true)}
             >
               <Icons.Menu size={22} />
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Drawer móvil se queda igual */}
+      {/* Drawer móvil FUERA del header */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[60]">
+        <div className="fixed inset-0 z-[100]">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
           <aside
             ref={mobilePanelRef}
@@ -343,6 +342,6 @@ export default function Navbar() {
           </aside>
         </div>
       )}
-    </header>
+    </>
   )
 }
