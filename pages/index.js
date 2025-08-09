@@ -7,7 +7,7 @@ import ImageFallback from '../components/ImageFallback'
 import { createSupabaseServerClient } from '../lib/supabaseServer'
 
 /* =======================
-   UI Helpers
+   Pequeños UI helpers
 ======================= */
 function PageHeader() {
   return (
@@ -63,8 +63,33 @@ function Kpi({ label, value }) {
   )
 }
 
-/** Mini carta MTG pequeña (ratio ~35/49) sin deformaciones */
+/** SVG placeholder elegante inline (no requiere archivo) */
+function CommanderPlaceholder({ title = 'Comandante', className = '' }) {
+  return (
+    <div
+      className={`relative w-16 rounded-[10px] overflow-hidden border border-black/15 bg-gradient-to-br from-gray-50 to-gray-100 ${className}`}
+      style={{ aspectRatio: '35 / 49' }}
+      role="img"
+      aria-label={`${title}: sin imagen`}
+    >
+      <div className="absolute inset-0 grid place-items-center">
+        {/* simple icono “carta” */}
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="5" y="3" width="14" height="18" rx="2.5" stroke="currentColor" className="text-gray-400" />
+          <rect x="7.5" y="6" width="9" height="6" rx="1" className="fill-gray-200" />
+          <rect x="7.5" y="14" width="9" height="2" rx="1" className="fill-gray-200" />
+        </svg>
+      </div>
+      <div className="pointer-events-none absolute inset-0 rounded-[10px] ring-1 ring-black/10" />
+    </div>
+  )
+}
+
+/** Mini carta MTG (ratio ~35/49) con fallback de verdad */
 function CommanderThumb({ src, alt }) {
+  if (!src) {
+    return <CommanderPlaceholder title={alt || 'Comandante'} />
+  }
   return (
     <div
       className="relative w-16 rounded-[10px] overflow-hidden border border-black/20 bg-neutral-100 shadow"
@@ -75,6 +100,7 @@ function CommanderThumb({ src, alt }) {
         alt={alt}
         fill
         className="absolute inset-0 h-full w-full object-contain"
+        fallback={<CommanderPlaceholder title={alt} className="!w-full !h-full" />}
       />
       <div className="pointer-events-none absolute inset-0 rounded-[10px] ring-1 ring-black/10" />
     </div>
@@ -87,7 +113,7 @@ function CommanderThumb({ src, alt }) {
 export async function getServerSideProps({ req, res }) {
   const supabase = createSupabaseServerClient(req, res)
 
-  // Intento 1: RPCs (si existen). No usar .catch() aquí.
+  // 1) Intento con RPCs (si existen)
   const [mRes, latRes, pomRes, comRes] = await Promise.allSettled([
     supabase.rpc('get_home_metrics').single(),
     supabase.rpc('get_latest_matches', { limit_n: 6 }),
@@ -117,11 +143,17 @@ export async function getServerSideProps({ req, res }) {
     : null
 
   let commanderOfMonth = comRow
-    ? { image: comRow.commander_image || comRow.commander_image_small || comRow.commander_image_normal || null,
-        wins: Number(comRow.wins || 0) }
+    ? {
+        image:
+          comRow.commander_image ||
+          comRow.commander_image_small ||
+          comRow.commander_image_normal ||
+          null,
+        wins: Number(comRow.wins || 0),
+      }
     : null
 
-  // ---------- Fallback si faltan RPCs o datos ----------
+  // 2) Fallback robusto si faltan RPCs o datos
   if (!metricsRow || latest.length === 0 || !playerOfMonth || !commanderOfMonth) {
     // Últimas 6 partidas
     const { data: matches } = await supabase
@@ -261,9 +293,10 @@ export default function Home({
   playerOfMonth = { name: '—', wins: 0 },
   commanderOfMonth = { image: null, wins: 0 },
 }) {
+  const hasMatches = (latest || []).length > 0
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 space-y-10">
-
       {/* Header */}
       <PageHeader />
 
@@ -286,10 +319,7 @@ export default function Home({
         <Card className="p-5 rounded-xl border border-gray-200/70 bg-white shadow-sm">
           <p className="text-sm text-gray-600">Comandante del mes</p>
           <div className="mt-2 flex items-center gap-3">
-            <CommanderThumb
-              src={commanderOfMonth.image || '/placeholder-commander.png'}
-              alt="Comandante del mes"
-            />
+            <CommanderThumb src={commanderOfMonth.image} alt="Comandante del mes" />
             <div>
               <p className="text-sm text-gray-600">{commanderOfMonth.wins} victoria(s)</p>
               <Link href="/stats" className="mt-1 inline-block text-sm text-gray-900 hover:underline">
@@ -297,6 +327,11 @@ export default function Home({
               </Link>
             </div>
           </div>
+          {!commanderOfMonth.image && (
+            <p className="mt-2 text-xs text-gray-500">
+              Aún no hay datos suficientes este mes.
+            </p>
+          )}
         </Card>
       </div>
 
@@ -305,11 +340,7 @@ export default function Home({
         title="Últimas partidas"
         right={<Link href="/matches" className="text-sm font-medium text-gray-900 hover:underline">Ver todas</Link>}
       >
-        {latest.length === 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            <SkeletonCard /><SkeletonCard /><SkeletonCard />
-          </div>
-        ) : (
+        {hasMatches ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {latest.map((m) => {
               const playedAt = m?.played_at ? format(new Date(m.played_at), 'dd/MM/yyyy') : '—'
@@ -319,10 +350,7 @@ export default function Home({
                   className="p-4 rounded-xl border border-gray-200/70 bg-white shadow-sm hover:shadow transition"
                 >
                   <div className="flex items-center gap-4">
-                    <CommanderThumb
-                      src={m.winner_image || '/placeholder-commander.png'}
-                      alt={m.game_name}
-                    />
+                    <CommanderThumb src={m.winner_image} alt={m.game_name} />
                     <div className="min-w-0 flex-1">
                       <h3 className="font-medium leading-tight text-gray-900 truncate">
                         {m.game_name}
@@ -339,6 +367,33 @@ export default function Home({
                 </Card>
               )
             })}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
+            <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-gray-100 grid place-items-center">
+              {/* icono simple */}
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M8 12h8M12 8v8" stroke="currentColor" className="text-gray-500" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h3 className="text-base font-medium text-gray-900">Aún no hay partidas</h3>
+            <p className="mt-1 text-sm text-gray-600">
+              Registra tu primera partida para ver aquí el histórico y estadísticas.
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <Link
+                href="/matches/new"
+                className="rounded-lg bg-gray-900 px-4 py-2 text-white hover:opacity-90 transition"
+              >
+                Nueva partida
+              </Link>
+              <Link
+                href="/formats"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-gray-900 hover:bg-gray-50 transition"
+              >
+                Ver formatos
+              </Link>
+            </div>
           </div>
         )}
       </Section>
