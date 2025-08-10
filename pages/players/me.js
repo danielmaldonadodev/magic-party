@@ -10,12 +10,31 @@ export default function MyProfileRedirect() {
   useEffect(() => {
     const fetchUserAndRedirect = async () => {
       try {
-        const { data, error } = await supabase.auth.getUser()
-        if (error || !data?.user) {
+        // 1. Obtener usuario logueado
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        const user = userData?.user
+
+        if (userError || !user) {
           router.replace('/login')
           return
         }
-        router.replace(`/players/${data.user.id}`)
+
+        // 2. Verificar que exista en profiles
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (profileError || !profileData) {
+          console.warn('Usuario en auth pero no en profiles. Cerrando sesión...')
+          await supabase.auth.signOut()
+          router.replace('/login')
+          return
+        }
+
+        // 3. Redirigir a su perfil
+        router.replace(`/players/${user.id}`)
       } finally {
         setChecking(false)
       }
