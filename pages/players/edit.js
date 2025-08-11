@@ -798,7 +798,7 @@ export default function EditProfile() {
                   <div>
                     <h5 className="font-medium text-gray-900 mb-1">¿Qué significa esto?</h5>
                       <p className="text-sm text-gray-600 leading-relaxed">
-                        La imagen destacada se mostrará como tu avatar principal en el perfil. Si eliges &quot;Comandante Favorito&quot;, 
+                        La imagen destacada se mostrará como tu avatar principal en el perfil. Si eliges &ldquo;Comandante Favorito&rdquo;, 
                         se usará automáticamente la imagen del comandante que más hayas usado en tus partidas.
                       </p>
                   </div>
