@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient'
 import CardSearchInput from '../../components/CardSearchInput'
 import ImageFallback from '../../components/ImageFallback'
 import PageHeader from '../../components/PageHeader'
+import { getArchetypeByColors } from '../../lib/archetypes'
 
 function toDatetimeLocal(d = new Date()) {
   const pad = (n) => String(n).padStart(2, '0')
@@ -77,6 +78,8 @@ export default function NewMatch() {
     first_to_die: false,
     won_by_combo: false,
     kills: '',
+    commander_colors: [],          // ← text[] en DB
+    commander_color_code: '',      // ← string “WUBRG…” (opcional)
   })
 
   useEffect(() => {
@@ -113,28 +116,60 @@ export default function NewMatch() {
       return copy
     })
 
-  const onSelectCommander = (index, card) => {
-    const name = card?.name || ''
-    const iu = card?.image_uris || {}
-    const art = iu.art_crop || ''
-    const normal = iu.normal || iu.large || ''
-    const small = iu.small || ''
-    const anyImg = normal || art || small || ''
-    setParticipants((prev) => {
-      const copy = [...prev]
-      copy[index] = {
-        ...copy[index],
-        deck_commander: name,
-        commander_name: name,
-        scryfall_id: card?.id || '',
-        commander_art_crop: art || '',
-        commander_image_normal: normal || '',
-        commander_image_small: small || '',
-        commander_image: anyImg || '',
-      }
-      return copy
-    })
+const onSelectCommander = (index, card) => {
+  // Debug temporal
+  console.log('[onSelectCommander]', {
+    name: card?.name,
+    color_identity: card?.color_identity,
+    faces: card?.card_faces?.map(f => ({ name: f?.name, ci: f?.color_identity, colors: f?.colors }))
+  })
+
+  const name = card?.name || ''
+  const iu = card?.image_uris || {}
+  const art = iu.art_crop || ''
+  const normal = iu.normal || iu.large || ''
+  const small = iu.small || ''
+
+  // 1) Preferimos color_identity
+  let colorsArr = Array.isArray(card?.color_identity) ? card.color_identity : []
+
+  // 2) Fallback para cartas de dos caras
+  if (!colorsArr.length && Array.isArray(card?.card_faces)) {
+    const facesColors = card.card_faces.flatMap(f =>
+      Array.isArray(f?.color_identity) ? f.color_identity : (Array.isArray(f?.colors) ? f.colors : [])
+    )
+    colorsArr = facesColors
   }
+
+  // 3) Último fallback: colors
+  if (!colorsArr.length && Array.isArray(card?.colors)) {
+    colorsArr = card.colors
+  }
+
+  // Normaliza y calcula code
+  const clean = Array.from(new Set(
+    (colorsArr || []).map(c => String(c).toUpperCase()).filter(c => ['W','U','B','R','G'].includes(c))
+  ))
+  const { code } = getArchetypeByColors(clean)
+  const anyImg = normal || art || small || ''
+
+  setParticipants(prev => {
+    const copy = [...prev]
+    copy[index] = {
+      ...copy[index],
+      deck_commander: name,
+      commander_name: name,
+      scryfall_id: card?.id || '',
+      commander_art_crop: art || '',
+      commander_image_normal: normal || '',
+      commander_image_small: small || '',
+      commander_image: anyImg || '',
+      commander_colors: clean,
+      commander_color_code: code || '',
+    }
+    return copy
+  })
+}
 
   const handleSubmit = async (e) => {
     e.preventDefault()

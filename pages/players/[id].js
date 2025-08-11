@@ -65,6 +65,22 @@ if (typeof document !== 'undefined' && !document.getElementById('player-professi
 }
 
 /* ────────────────────────────────────────────── */
+/* Helpers                                          */
+/* ────────────────────────────────────────────── */
+// Sube automáticamente calidad de imagen de Scryfall: /small/ -> /normal/
+function upgradeScryfall(url) {
+  if (!url) return url
+  try {
+    const u = new URL(url)
+    if ((u.hostname === 'cards.scryfall.io' || u.hostname === 'img.scryfall.com') && u.pathname.includes('/small/')) {
+      u.pathname = u.pathname.replace('/small/', '/normal/')
+      return u.toString()
+    }
+  } catch {}
+  return url
+}
+
+/* ────────────────────────────────────────────── */
 /* Professional Components                          */
 /* ────────────────────────────────────────────── */
 function ProfessionalStatTile({ label, value, hint, index = 0, icon }) {
@@ -352,25 +368,7 @@ function ProfessionalSegmentedTabs({ current, onChange, canEdit }) {
             Estadísticas
           </span>
         </button>
-        <button
-          type="button"
-          disabled={!canEdit}
-          onClick={() => canEdit && onChange('edit')}
-          className={`relative rounded-md px-6 py-2.5 text-sm font-semibold transition-all duration-300 ${
-            current === 'edit'
-              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
-              : canEdit 
-                ? 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-                : 'text-gray-400 cursor-not-allowed opacity-50'
-          }`}
-        >
-          <span className="relative z-10 flex items-center gap-2">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Editar
-          </span>
-        </button>
+
       </div>
     </div>
   )
@@ -569,10 +567,7 @@ function ProfessionalEditProfileForm({ initialNickname, onSaved }) {
                 <p className={`text-sm transition-colors duration-300 ${
                   isValid ? 'text-gray-600' : 'text-red-600'
                 }`}>
-                  {isValid ? 
-                    'El nombre debe tener entre 2 y 32 caracteres' : 
-                    'El nombre debe tener entre 2 y 32 caracteres'
-                  }
+                  El nombre debe tener entre 2 y 32 caracteres
                 </p>
               </div>
             </div>
@@ -636,6 +631,10 @@ export default function PlayerProfile() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // NUEVO: avatar y preferencia de imagen
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [highlightPreference, setHighlightPreference] = useState('profile') // 'profile' | 'commander'
+
   // Lógica existente sin cambios
   useEffect(() => {
     let mounted = true
@@ -670,14 +669,18 @@ export default function PlayerProfile() {
 
       setLoading(true); setError(null)
       try {
+        // ⬇️ Ampliamos select para traer avatar y preferencia
         const { data: profile, error: pErr } = await supabase
           .from('profiles')
-          .select('nickname')
+          .select('nickname, avatar_url, highlight_image_preference')
           .eq('id', resolvedId)
           .single()
         if (pErr) throw pErr
         if (!mounted) return
+
         setNickname(profile?.nickname || 'Jugador')
+        setAvatarUrl(profile?.avatar_url || '')
+        setHighlightPreference(profile?.highlight_image_preference || 'profile')
 
         const { data: psv, error: vErr } = await supabase
           .from('player_stats_view')
@@ -760,6 +763,22 @@ export default function PlayerProfile() {
     fetchData()
     return () => { mounted = false }
   }, [resolvedId])
+
+  // ⬇️ Cálculo de imagen destacada con preferencia y fallbacks seguros
+  const commanderImage = useMemo(
+    () => upgradeScryfall(stats?.topCommanders?.[0]?.image || ''),
+    [stats?.topCommanders]
+  )
+
+  const highlightImage = useMemo(() => {
+    const pref = (highlightPreference || 'profile').toLowerCase()
+    const avatar = avatarUrl || ''
+    if (pref === 'commander') {
+      return commanderImage || avatar || '/default-avatar.png'
+    }
+    // 'profile' por defecto
+    return (avatar || commanderImage || '/default-avatar.png')
+  }, [avatarUrl, highlightPreference, commanderImage])
 
   if (loading) return <ProfessionalSkeleton />
 
@@ -860,7 +879,7 @@ export default function PlayerProfile() {
 
   if (!stats) return null
 
-  const currentTab = (tab === 'edit' && isOwner) ? 'edit' : 'stats'
+  const currentTab = 'stats'
   const winrate = Number.isFinite(stats.winRate) ? stats.winRate : (stats.totalGames ? ((stats.totalWins / stats.totalGames) * 100) : 0)
   
   const getWinrateTheme = (rate) => {
@@ -912,11 +931,16 @@ export default function PlayerProfile() {
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8 p-8 lg:p-10">
             {/* Professional Avatar Section */}
             <div className="relative flex-shrink-0">
-              {/* Main avatar */}
-              <div className={`relative grid h-32 w-32 lg:h-40 lg:w-40 place-items-center rounded-full bg-gray-100 text-4xl lg:text-5xl font-bold text-gray-700 ring-2 ${winrateTheme.border} shadow-md transition-all duration-500 group-hover:scale-105`}>
-                <span className="transition-all duration-300 group-hover:scale-105">
-                  {(nickname || '?').slice(0, 1).toUpperCase()}
-                </span>
+              {/* NUEVO: Avatar con preferencia y fallbacks */}
+              <div className={`relative h-32 w-32 lg:h-40 lg:w-40 rounded-full overflow-hidden ring-2 ${winrateTheme.border} shadow-md transition-all duration-500 group-hover:scale-105 bg-gray-100`}>
+                <Image
+                  src={highlightImage || '/default-avatar.png'}
+                  alt={nickname || 'Jugador'}
+                  fill
+                  className="object-cover"
+                  sizes="160px"
+                  priority
+                />
                 {/* Status indicator */}
                 <div className={`absolute -top-1 -right-1 h-8 w-8 rounded-full bg-gradient-to-br ${winrateTheme.gradient} ring-2 ring-white flex items-center justify-center text-xs font-semibold text-white shadow-md`}>
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -931,7 +955,7 @@ export default function PlayerProfile() {
               {/* Name and status */}
               <div className="space-y-3">
                 <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-gray-900">
-                  {nickname}
+                  {nickname || 'Jugador'}
                 </h1>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <p className="text-gray-600 font-medium">
@@ -951,6 +975,21 @@ export default function PlayerProfile() {
                     <span>{winrateTheme.status}</span>
                   </div>
                 </div>
+
+                {/* NUEVO: Botón Editar perfil solo para owner */}
+                {isOwner && (
+                  <div className="mt-2">
+                    <Link
+                      href="/players/edit"
+                      className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Editar perfil
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* Winrate Display */}
@@ -970,7 +1009,7 @@ export default function PlayerProfile() {
                       {winrate.toFixed(1)}%
                     </p>
                     <p className="text-sm text-gray-500 font-medium">
-                      {stats.totalWins} victorias de {stats.totalGames} partidas
+                      {stats?.totalWins ?? 0} victorias de {stats?.totalGames ?? 0} partidas
                     </p>
                   </div>
                 </div>
@@ -992,7 +1031,7 @@ export default function PlayerProfile() {
 
         {/* Professional Tabs */}
         <div className="flex justify-center">
-          <ProfessionalSegmentedTabs current={currentTab} onChange={goTab} canEdit={isOwner} />
+          <ProfessionalSegmentedTabs current="stats" onChange={goTab} canEdit={false} />
         </div>
 
         {currentTab === 'edit' ? (
