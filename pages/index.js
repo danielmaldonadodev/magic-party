@@ -458,88 +458,89 @@ function fallbackColorArchetype(colors = []) {
     COMPONENTES PROFESIONALES
     =============================================================== */
 
-  function ProfessionalHero({ theme }) {
-    const [loaded, setLoaded] = useState(false)
-    
-    useEffect(() => {
-      setLoaded(true)
-    }, [])
+function ProfessionalHero({ theme }) {
+  const [loaded, setLoaded] = useState(false)
+  
+  useEffect(() => {
+    setLoaded(true)
+  }, [])
 
-    return (
-      <section className="relative overflow-hidden py-20">
-        <div 
-          className="absolute inset-0 theme-transition"
-          style={{ 
-            background: `linear-gradient(135deg, ${theme.backgroundGradient})`,
-            '--glow-color': theme.colors.glowColor 
-          }}
-        />
-        
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-l from-white/20 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl" />
+  return (
+    <section className="relative overflow-hidden py-12 sm:py-16 lg:py-20">
+      <div 
+        className="absolute inset-0 theme-transition"
+        style={{ 
+          background: `linear-gradient(135deg, ${theme.backgroundGradient})`,
+          '--glow-color': theme.colors.glowColor 
+        }}
+      />
+      
+      {/* Decorative elements - responsivos */}
+      <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 lg:w-96 lg:h-96 bg-gradient-to-l from-white/20 to-transparent rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 sm:w-64 sm:h-64 lg:w-96 lg:h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl" />
 
-        <div className="relative max-w-7xl mx-auto px-6">
-          <div className="text-center space-y-8">
-            {/* Theme indicator */}
-            <div 
-              className={`inline-flex items-center gap-3 px-6 py-3 rounded-full professional-glass ${
-                loaded ? 'animate-professional-fade-in' : 'opacity-0'
-              }`}
-              style={{ animationDelay: '0.2s' }}
-            >
-              <span className="text-2xl">{theme.icon}</span>
-              <span className={`font-bold text-lg ${theme.text.strong}`}>
-                {theme.label}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center space-y-6 sm:space-y-8">
+          {/* Theme indicator - responsivo */}
+          <div 
+            className={`inline-flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-6 sm:py-3 rounded-full professional-glass ${
+              loaded ? 'animate-professional-fade-in' : 'opacity-0'
+            }`}
+            style={{ animationDelay: '0.2s' }}
+          >
+            <span className="text-lg sm:text-xl lg:text-2xl">{theme.icon}</span>
+            <span className={`font-bold text-sm sm:text-base lg:text-lg ${theme.text.strong}`}>
+              {theme.label}
+            </span>
+          </div>
+
+          {/* Main title - completamente responsive */}
+          <div 
+            className={`space-y-3 sm:space-y-4 ${loaded ? 'animate-professional-fade-in' : 'opacity-0'}`}
+            style={{ animationDelay: '0.4s' }}
+          >
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tight leading-tight">
+              <span className={`${theme.text.strong} block sm:inline`}>
+                Magic
               </span>
+              <span className="text-gray-900 block sm:inline sm:ml-3 lg:ml-5">Party</span>
+            </h1>
+            
+            <p className={`text-base sm:text-lg md:text-xl lg:text-2xl ${theme.text.soft} max-w-4xl mx-auto leading-relaxed font-medium px-4 sm:px-0`}>
+              Tu plataforma profesional para registrar partidas, analizar estadísticas 
+              y descubrir tendencias en tu meta local de Magic: The Gathering.
+            </p>
+            
+            <div className={`mt-3 sm:mt-4 text-xs sm:text-sm ${theme.text.soft} opacity-80 px-4 sm:px-0`}>
+              <span className="font-semibold">Estrategia actual: </span>
+              <span className="block sm:inline mt-1 sm:mt-0">{theme.fact}</span>
             </div>
+          </div>
 
-            {/* Main title */}
-            <div 
-              className={`space-y-4 ${loaded ? 'animate-professional-fade-in' : 'opacity-0'}`}
-              style={{ animationDelay: '0.4s' }}
+          {/* Action buttons - completamente rediseñados para móvil */}
+          <div 
+            className={`flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 px-4 sm:px-0 ${loaded ? 'animate-professional-fade-in' : 'opacity-0'}`}
+            style={{ animationDelay: '0.6s' }}
+          >
+            <Link
+              href="/matches/new"
+              className={`group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl ${theme.gradient} text-white font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 ${theme.colors.ring}`}
             >
-              <h1 className="text-6xl md:text-8xl font-black tracking-tight">
-                <span className={`bg-gradient-to-r ${theme.colors.primary} bg-clip-text text-transparent`}>
-                  Magic
-                </span>
-                <span className="text-gray-900 ml-4">Party</span>
-              </h1>
-              
-              <p className={`text-xl md:text-2xl ${theme.text.soft} max-w-4xl mx-auto leading-relaxed font-medium`}>
-                Tu plataforma profesional para registrar partidas, analizar estadísticas 
-                y descubrir tendencias en tu meta local de Magic: The Gathering.
-              </p>
-              
-              <div className={`mt-4 text-sm ${theme.text.soft} opacity-80`}>
-                <span className="font-semibold">Estrategia actual: </span>
-                <span>{theme.fact}</span>
+              <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center gap-3">
+                <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Nueva Partida
               </div>
-            </div>
+            </Link>
 
-            {/* Action buttons */}
-            <div 
-              className={`flex flex-wrap items-center justify-center gap-6 ${loaded ? 'animate-professional-fade-in' : 'opacity-0'}`}
-              style={{ animationDelay: '0.6s' }}
-            >
-              <Link
-                href="/matches/new"
-                className={`group relative px-8 py-4 rounded-xl ${theme.gradient} text-white font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-offset-2 ${theme.colors.ring}`}
-              >
-                <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative flex items-center gap-3">
-                  <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Nueva Partida
-                </div>
-              </Link>
-
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
               <Link
                 href="/matches"
-                className="group px-8 py-4 rounded-xl bg-white/80 backdrop-blur-sm font-semibold text-gray-800 border-2 border-gray-300 hover:border-gray-400 hover:bg-white transition-all duration-300 hover:scale-105"
+                className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-white/80 backdrop-blur-sm font-semibold text-gray-800 border-2 border-gray-300 hover:border-gray-400 hover:bg-white transition-all duration-300 hover:scale-105"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
@@ -549,21 +550,23 @@ function fallbackColorArchetype(colors = []) {
 
               <Link
                 href="/stats"
-                className="group px-8 py-4 rounded-xl bg-white/80 backdrop-blur-sm font-semibold text-gray-800 border-2 border-gray-300 hover:border-gray-400 hover:bg-white transition-all duration-300 hover:scale-105"
+                className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-white/80 backdrop-blur-sm font-semibold text-gray-800 border-2 border-gray-300 hover:border-gray-400 hover:bg-white transition-all duration-300 hover:scale-105"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
-                  Estadísticas
+                  <span className="hidden sm:inline">Estadísticas</span>
+                  <span className="sm:hidden">Stats</span>
                 </div>
               </Link>
             </div>
           </div>
         </div>
-      </section>
-    )
-  }
+      </div>
+    </section>
+  )
+}
 
   function ProfessionalSection({ title, subtitle, children, index = 0, theme, rightAction }) {
     return (
@@ -984,7 +987,7 @@ function ProfessionalCommanderCard({ commander, theme, isCommanderOfMonth = fals
         <div className="fixed top-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
         <div className="fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-6 space-y-20">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 space-y-12 sm:space-y-16 lg:space-y-20">
           {/* Hero Section */}
           <ProfessionalHero theme={theme} />
 

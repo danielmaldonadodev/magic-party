@@ -1,14 +1,264 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import Link from 'next/link'
 import * as Icons from 'lucide-react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import NavLink from './NavLink'
 
+// Sistema de temas MTG idéntico al del index
+const MTG_PROFESSIONAL_THEMES = [
+  {
+    key: 'mono-white',
+    label: 'Plains',
+    icon: '⚪️',
+    colors: {
+      primary: 'from-amber-400 to-yellow-500',
+      secondary: 'from-amber-100 to-yellow-200',
+      accent: 'bg-amber-500',
+      bgSoft: 'bg-amber-50/80',
+      ring: 'ring-amber-300',
+      glowColor: 'rgba(245, 158, 11, 0.4)',
+    },
+    gradient: 'bg-gradient-to-br from-amber-500 via-yellow-400 to-amber-600',
+    backgroundGradient: 'from-amber-50 via-yellow-50 to-amber-100',
+    navbarGradient: 'from-amber-900/95 to-yellow-900/95',
+    text: {
+      strong: 'text-amber-900',
+      soft: 'text-amber-700',
+      white: 'text-white',
+      navbar: 'text-amber-100',
+    },
+    border: 'border-amber-300',
+    shadow: 'shadow-amber-500/25',
+    navAccent: 'amber',
+  },
+  {
+    key: 'mono-blue',
+    label: 'Island',
+    icon: '🔵',
+    colors: {
+      primary: 'from-blue-500 to-indigo-600',
+      secondary: 'from-blue-100 to-indigo-200',
+      accent: 'bg-blue-600',
+      bgSoft: 'bg-blue-50/80',
+      ring: 'ring-blue-300',
+      glowColor: 'rgba(59, 130, 246, 0.4)',
+    },
+    gradient: 'bg-gradient-to-br from-blue-600 via-indigo-500 to-blue-700',
+    backgroundGradient: 'from-blue-50 via-indigo-50 to-blue-100',
+    navbarGradient: 'from-blue-900/95 to-indigo-900/95',
+    text: {
+      strong: 'text-blue-900',
+      soft: 'text-blue-700',
+      white: 'text-white',
+      navbar: 'text-blue-100',
+    },
+    border: 'border-blue-300',
+    shadow: 'shadow-blue-500/25',
+    navAccent: 'blue',
+  },
+  {
+    key: 'mono-black',
+    label: 'Swamp',
+    icon: '⚫️',
+    colors: {
+      primary: 'from-gray-700 to-gray-900',
+      secondary: 'from-gray-200 to-gray-400',
+      accent: 'bg-gray-800',
+      bgSoft: 'bg-gray-50/80',
+      ring: 'ring-gray-400',
+      glowColor: 'rgba(107, 114, 128, 0.4)',
+    },
+    gradient: 'bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900',
+    backgroundGradient: 'from-gray-50 via-gray-100 to-gray-200',
+    navbarGradient: 'from-gray-900/95 to-black/95',
+    text: {
+      strong: 'text-gray-900',
+      soft: 'text-gray-700',
+      white: 'text-white',
+      navbar: 'text-gray-100',
+    },
+    border: 'border-gray-400',
+    shadow: 'shadow-gray-500/25',
+    navAccent: 'gray',
+  },
+  {
+    key: 'mono-red',
+    label: 'Mountain',
+    icon: '🔴',
+    colors: {
+      primary: 'from-red-500 to-rose-600',
+      secondary: 'from-red-100 to-rose-200',
+      accent: 'bg-red-600',
+      bgSoft: 'bg-red-50/80',
+      ring: 'ring-red-300',
+      glowColor: 'rgba(239, 68, 68, 0.4)',
+    },
+    gradient: 'bg-gradient-to-br from-red-600 via-rose-500 to-red-700',
+    backgroundGradient: 'from-red-50 via-rose-50 to-red-100',
+    navbarGradient: 'from-red-900/95 to-rose-900/95',
+    text: {
+      strong: 'text-red-900',
+      soft: 'text-red-700',
+      white: 'text-white',
+      navbar: 'text-red-100',
+    },
+    border: 'border-red-300',
+    shadow: 'shadow-red-500/25',
+    navAccent: 'red',
+  },
+  {
+    key: 'mono-green',
+    label: 'Forest',
+    icon: '🟢',
+    colors: {
+      primary: 'from-green-500 to-emerald-600',
+      secondary: 'from-green-100 to-emerald-200',
+      accent: 'bg-green-600',
+      bgSoft: 'bg-green-50/80',
+      ring: 'ring-green-300',
+      glowColor: 'rgba(34, 197, 94, 0.4)',
+    },
+    gradient: 'bg-gradient-to-br from-green-600 via-emerald-500 to-green-700',
+    backgroundGradient: 'from-green-50 via-emerald-50 to-green-100',
+    navbarGradient: 'from-green-900/95 to-emerald-900/95',
+    text: {
+      strong: 'text-green-900',
+      soft: 'text-green-700',
+      white: 'text-white',
+      navbar: 'text-green-100',
+    },
+    border: 'border-green-300',
+    shadow: 'shadow-green-500/25',
+    navAccent: 'green',
+  },
+  {
+    key: 'azorius',
+    label: 'Azorius',
+    icon: '⚪️🔵',
+    colors: {
+      primary: 'from-blue-400 to-indigo-500',
+      secondary: 'from-blue-100 to-indigo-200',
+      accent: 'bg-blue-500',
+      bgSoft: 'bg-blue-50/80',
+      ring: 'ring-blue-300',
+      glowColor: 'rgba(99, 102, 241, 0.4)',
+    },
+    gradient: 'bg-gradient-to-br from-blue-500 via-indigo-400 to-blue-600',
+    backgroundGradient: 'from-blue-50 via-indigo-50 to-blue-100',
+    navbarGradient: 'from-blue-900/95 to-indigo-900/95',
+    text: {
+      strong: 'text-blue-900',
+      soft: 'text-blue-700',
+      white: 'text-white',
+      navbar: 'text-blue-100',
+    },
+    border: 'border-blue-300',
+    shadow: 'shadow-blue-500/25',
+    navAccent: 'blue',
+  },
+  {
+    key: 'golgari',
+    label: 'Golgari',
+    icon: '⚫️🟢',
+    colors: {
+      primary: 'from-green-600 to-gray-700',
+      secondary: 'from-green-100 to-gray-300',
+      accent: 'bg-green-700',
+      bgSoft: 'bg-green-50/80',
+      ring: 'ring-green-400',
+      glowColor: 'rgba(21, 128, 61, 0.4)',
+    },
+    gradient: 'bg-gradient-to-br from-green-600 via-gray-600 to-green-800',
+    backgroundGradient: 'from-green-50 via-gray-50 to-green-100',
+    navbarGradient: 'from-green-900/95 to-gray-900/95',
+    text: {
+      strong: 'text-green-900',
+      soft: 'text-green-700',
+      white: 'text-white',
+      navbar: 'text-green-100',
+    },
+    border: 'border-green-400',
+    shadow: 'shadow-green-500/25',
+    navAccent: 'green',
+  },
+  {
+    key: 'izzet',
+    label: 'Izzet',
+    icon: '🔵🔴',
+    colors: {
+      primary: 'from-blue-500 to-red-500',
+      secondary: 'from-blue-100 to-red-200',
+      accent: 'bg-purple-600',
+      bgSoft: 'bg-purple-50/80',
+      ring: 'ring-purple-300',
+      glowColor: 'rgba(147, 51, 234, 0.4)',
+    },
+    gradient: 'bg-gradient-to-br from-blue-500 via-purple-500 to-red-500',
+    backgroundGradient: 'from-blue-50 via-purple-50 to-red-50',
+    navbarGradient: 'from-blue-900/95 to-red-900/95',
+    text: {
+      strong: 'text-purple-900',
+      soft: 'text-purple-700',
+      white: 'text-white',
+      navbar: 'text-purple-100',
+    },
+    border: 'border-purple-300',
+    shadow: 'shadow-purple-500/25',
+    navAccent: 'purple',
+  },
+]
+
+const DEFAULT_THEME_KEY = 'azorius'
+
+// Hook para rotación de temas (idéntico al del index)
+function useThemeRotation(intervalMs = 40000) {
+  const [themeKey, setThemeKey] = useState(DEFAULT_THEME_KEY)
+  const [index, setIndex] = useState(0)
+  const timer = useRef(null)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mp_professional_theme')
+      if (saved) {
+        const idx = MTG_PROFESSIONAL_THEMES.findIndex(t => t.key === saved)
+        if (idx >= 0) {
+          setThemeKey(saved)
+          setIndex(idx)
+        }
+      }
+    } catch (e) {}
+  }, [])
+
+  useEffect(() => {
+    if (timer.current) clearInterval(timer.current)
+    timer.current = setInterval(() => {
+      setIndex(prev => {
+        const next = (prev + 1) % MTG_PROFESSIONAL_THEMES.length
+        const nextKey = MTG_PROFESSIONAL_THEMES[next].key
+        setThemeKey(nextKey)
+        try { 
+          localStorage.setItem('mp_professional_theme', nextKey) 
+        } catch (e) {}
+        return next
+      })
+    }, intervalMs)
+    return () => timer.current && clearInterval(timer.current)
+  }, [intervalMs])
+
+  const theme = useMemo(() => {
+    const found = MTG_PROFESSIONAL_THEMES.find(t => t.key === themeKey)
+    return found || MTG_PROFESSIONAL_THEMES[0]
+  }, [themeKey])
+
+  return { theme, themeKey, setThemeKey, index, setIndex }
+}
+
 export default function Navbar() {
   const router = useRouter()
+  const { theme } = useThemeRotation(40000) // Sincronizado con el index
 
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -16,17 +266,73 @@ export default function Navbar() {
   const [user, setUser] = useState(null)
   const [profileNick, setProfileNick] = useState(null)
   const [isReady, setIsReady] = useState(false)
+  
+  // NUEVO: Sistema de imagen de perfil avanzado
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [highlightPreference, setHighlightPreference] = useState('profile')
+  const [topCommanderImage, setTopCommanderImage] = useState('')
 
   const userMenuRef = useRef(null)
   const mobilePanelRef = useRef(null)
 
   const NAV_ITEMS = [
-    { href: '/matches', label: 'Partidas', Icon: Icons.Layers3 },
-    { href: '/players', label: 'Jugadores', Icon: Icons.Users2 },
-    { href: '/ranking', label: 'Ranking', Icon: Icons.Award },
-    { href: '/stats', label: 'Estadísticas', Icon: Icons.TrendingUp },
-    { href: '/formats', label: 'Formatos', Icon: Icons.Sparkles },
+    { href: '/matches', label: 'Partidas', Icon: Icons.Swords },
+    { href: '/players', label: 'Jugadores', Icon: Icons.Users },
+    { href: '/ranking', label: 'Ranking', Icon: Icons.Trophy },
+    { href: '/stats', label: 'Estadísticas', Icon: Icons.BarChart3 },
+    { href: '/formats', label: 'Formatos', Icon: Icons.Library },
   ]
+
+  // Función para obtener clases temáticas dinámicas
+  const getThemeClasses = (accent) => {
+    const baseClasses = {
+      amber: {
+        active: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+        hover: 'hover:text-amber-200 hover:bg-amber-500/10',
+        accent: 'bg-amber-500 hover:bg-amber-600',
+        border: 'border-amber-500/30',
+        shadow: 'shadow-amber-500/10',
+      },
+      blue: {
+        active: 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+        hover: 'hover:text-blue-200 hover:bg-blue-500/10',
+        accent: 'bg-blue-500 hover:bg-blue-600',
+        border: 'border-blue-500/30',
+        shadow: 'shadow-blue-500/10',
+      },
+      gray: {
+        active: 'bg-gray-500/20 text-gray-300 border border-gray-500/30',
+        hover: 'hover:text-gray-200 hover:bg-gray-500/10',
+        accent: 'bg-gray-600 hover:bg-gray-700',
+        border: 'border-gray-500/30',
+        shadow: 'shadow-gray-500/10',
+      },
+      red: {
+        active: 'bg-red-500/20 text-red-300 border border-red-500/30',
+        hover: 'hover:text-red-200 hover:bg-red-500/10',
+        accent: 'bg-red-500 hover:bg-red-600',
+        border: 'border-red-500/30',
+        shadow: 'shadow-red-500/10',
+      },
+      green: {
+        active: 'bg-green-500/20 text-green-300 border border-green-500/30',
+        hover: 'hover:text-green-200 hover:bg-green-500/10',
+        accent: 'bg-green-500 hover:bg-green-600',
+        border: 'border-green-500/30',
+        shadow: 'shadow-green-500/10',
+      },
+      purple: {
+        active: 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
+        hover: 'hover:text-purple-200 hover:bg-purple-500/10',
+        accent: 'bg-purple-500 hover:bg-purple-600',
+        border: 'border-purple-500/30',
+        shadow: 'shadow-purple-500/10',
+      },
+    }
+    return baseClasses[accent] || baseClasses.blue
+  }
+
+  const themeClasses = getThemeClasses(theme.navAccent)
 
   // Fix para router.isReady
   useEffect(() => {
@@ -36,7 +342,7 @@ export default function Navbar() {
   }, [router.isReady])
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
+    const onScroll = () => setScrolled(window.scrollY > 10)
     onScroll()
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
@@ -66,33 +372,62 @@ export default function Navbar() {
 
   useEffect(() => {
     let ignore = false
-    const loadNick = async () => {
+    const loadProfile = async () => {
       if (!user?.id) { 
         setProfileNick(null)
+        setAvatarUrl('')
+        setHighlightPreference('profile')
+        setTopCommanderImage('')
         return 
       }
       
       try {
-        const { data, error } = await supabase
+        // Cargar perfil completo con preferencias de imagen
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('nickname')
+          .select('nickname, avatar_url, highlight_image_preference')
           .eq('id', user.id)
           .single()
         
         if (ignore) return
         
-        if (!error && data) {
-          setProfileNick(data.nickname || null)
+        if (!error && profile) {
+          setProfileNick(profile.nickname || null)
+          setAvatarUrl(profile.avatar_url || '')
+          setHighlightPreference(profile.highlight_image_preference || 'profile')
         } else {
           console.log('No profile found or error:', error)
           setProfileNick(null)
+          setAvatarUrl('')
+          setHighlightPreference('profile')
         }
+
+        // Cargar comandante más usado si la preferencia es 'commander'
+        if (profile?.highlight_image_preference === 'commander') {
+          const { data: topCmd, error: cmdErr } = await supabase
+            .from('commander_stats_by_user')
+            .select('last_image_url')
+            .eq('user_id', user.id)
+            .order('games_played', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          
+          if (!ignore && !cmdErr && topCmd?.last_image_url) {
+            setTopCommanderImage(topCmd.last_image_url)
+          }
+        }
+        
       } catch (error) {
         console.error('Error loading profile:', error)
-        if (!ignore) setProfileNick(null)
+        if (!ignore) {
+          setProfileNick(null)
+          setAvatarUrl('')
+          setHighlightPreference('profile')
+          setTopCommanderImage('')
+        }
       }
     }
-    loadNick()
+    loadProfile()
     return () => { ignore = true }
   }, [user?.id])
 
@@ -170,324 +505,333 @@ export default function Navbar() {
   const displayName = profileNick || user?.user_metadata?.nickname || user?.email || 'Usuario'
   const initial = (displayName || 'U').slice(0, 1).toUpperCase()
 
+  // Función para upgrade de URLs de Scryfall (igual que en el perfil)
+  const upgradeScryfall = (url) => {
+    if (!url) return url
+    try {
+      const u = new URL(url)
+      if ((u.hostname === 'cards.scryfall.io' || u.hostname === 'img.scryfall.com') && u.pathname.includes('/small/')) {
+        u.pathname = u.pathname.replace('/small/', '/normal/')
+        return u.toString()
+      }
+    } catch {}
+    return url
+  }
+
+  // Lógica de imagen destacada (igual que en el perfil)
+  const commanderImage = useMemo(
+    () => upgradeScryfall(topCommanderImage || ''),
+    [topCommanderImage]
+  )
+
+  const highlightImage = useMemo(() => {
+    const pref = (highlightPreference || 'profile').toLowerCase()
+    const avatar = avatarUrl || ''
+    if (pref === 'commander') {
+      return commanderImage || avatar || ''
+    }
+    // 'profile' por defecto
+    return avatar || commanderImage || ''
+  }, [avatarUrl, highlightPreference, commanderImage])
+
   const handleProfileClick = (e) => {
     e.preventDefault()
     setUserMenuOpen(false)
+    setMobileOpen(false)
     router.push('/players/me?tab=stats')
   }
 
   const handleEditProfileClick = (e) => {
     e.preventDefault()
     setUserMenuOpen(false)
+    setMobileOpen(false)
     router.push('/players/me?tab=edit')
   }
 
   return (
     <>
+      {/* NAVBAR PRINCIPAL - DINÁMICO CON TEMAS MTG */}
       <header
         className={[
-          'fixed inset-x-0 top-0 z-[70] h-[72px] border-b',
-          'bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl',
-          'supports-[backdrop-filter]:bg-white/90 dark:supports-[backdrop-filter]:bg-gray-950/90',
-          'transition-all duration-300 ease-out',
+          'fixed inset-x-0 top-0 z-50 h-16',
+          'backdrop-blur-md border-b transition-all duration-500',
           scrolled 
-            ? 'shadow-lg border-gray-200 dark:border-gray-800' 
-            : 'shadow-sm border-gray-200/70 dark:border-gray-800/70',
+            ? `${themeClasses.border} shadow-lg ${themeClasses.shadow}` 
+            : 'border-gray-800/50',
         ].join(' ')}
-        role="banner"
+        style={{
+          background: `linear-gradient(135deg, ${theme.navbarGradient})`,
+        }}
       >
-        <div className="max-w-[1400px] mx-auto h-full px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8">
           <div className="flex h-full items-center justify-between">
             
-            {/* Logo profesional */}
+            {/* LOGO MAGIC PARTY TEMÁTICO */}
             <Link
               href="/"
-              className="group relative flex items-center gap-3 text-xl font-medium tracking-tight text-gray-900 dark:text-white transition-colors duration-200 hover:text-gray-700 dark:hover:text-gray-200"
+              className={`flex items-center gap-3 ${theme.text.navbar} font-bold text-lg transition-all duration-300 hover:scale-105`}
             >
-              <span className="relative inline-grid place-items-center w-10 h-10 rounded-lg bg-gray-900 dark:bg-white shadow-md transition-all duration-200 group-hover:shadow-lg group-hover:scale-105">
-                <Icons.Sparkles size={18} className="text-white dark:text-gray-900" aria-hidden="true" />
-              </span>
-              <span className="relative">
-                <span className="font-normal text-gray-700 dark:text-gray-300">Magic</span>
-                <span className="font-semibold ml-1 text-gray-900 dark:text-white">Party</span>
-              </span>
+              <div 
+                className={`w-9 h-9 rounded-lg ${theme.gradient} flex items-center justify-center shadow-lg transition-all duration-300 hover:shadow-xl`}
+                style={{ boxShadow: `0 4px 14px 0 ${theme.colors.glowColor}` }}
+              >
+                <Icons.Sparkles size={20} className="text-white" />
+              </div>
+              <span className="hidden sm:block">Magic Party</span>
             </Link>
 
-            {/* Navegación desktop profesional */}
-            <nav
-              className="hidden lg:flex items-center gap-1 px-8"
-              aria-label="Principal"
-            >
+            {/* NAVEGACIÓN DESKTOP TEMÁTICA */}
+            <nav className="hidden lg:flex items-center space-x-1">
               {NAV_ITEMS.map(({ href, label, Icon }) => {
                 const active = isActive(href)
                 return (
                   <NavLink
                     key={href}
                     href={href}
-                    variant="default"
                     className={[
-                      'relative flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200',
-                      'text-sm font-medium',
+                      'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300',
                       active
-                        ? 'bg-gray-900 text-white shadow-md'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800',
+                        ? themeClasses.active
+                        : `${theme.text.navbar}/70 ${themeClasses.hover}`,
                     ].join(' ')}
                   >
-                    <Icon size={16} className={active ? 'text-white' : 'text-gray-500'} aria-hidden="true" />
+                    <Icon size={16} />
                     <span>{label}</span>
                   </NavLink>
                 )
               })}
             </nav>
 
-            {/* Área de usuario profesional */}
+            {/* ACCIONES DERECHA TEMÁTICAS */}
             <div className="flex items-center gap-3">
-              {!user ? (
-                <div className="hidden lg:flex items-center gap-3">
-                  <NavLink
-                    href="/login"
-                    variant="default"
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    Iniciar Sesión
-                  </NavLink>
-                  <NavLink
-                    href="/signup"
-                    variant="default"
-                    className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium shadow-md transition-all duration-200 hover:bg-gray-800 hover:shadow-lg"
-                  >
-                    Registrarse
-                  </NavLink>
-                </div>
-              ) : (
-                <div className="relative" ref={userMenuRef}>
+              {/* USUARIO DESKTOP */}
+              {user ? (
+                <div className="hidden lg:block relative" ref={userMenuRef}>
                   <button
-                    onClick={() => setUserMenuOpen((v) => !v)}
-                    className="group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500/20"
-                    aria-haspopup="menu"
-                    aria-expanded={userMenuOpen}
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-300 border backdrop-blur-sm ${theme.text.navbar}/90 hover:bg-white/10 border-white/20`}
                   >
-                    <div className="relative w-8 h-8 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 grid place-items-center text-sm font-semibold shadow-sm">
-                      {initial}
-                    </div>
-                    <span className="hidden xl:inline text-sm font-medium text-gray-900 dark:text-white max-w-[20ch] truncate">
-                      {displayName}
-                    </span>
-                    <Icons.ChevronDown 
-                      size={14} 
-                      className={[
-                        'text-gray-500 dark:text-gray-400 transition-transform duration-200',
-                        userMenuOpen ? 'rotate-180' : ''
-                      ].join(' ')} 
-                      aria-hidden="true" 
-                    />
+                    {highlightImage ? (
+                      <div className={`w-6 h-6 rounded-full overflow-hidden shadow-sm ring-1 ring-white/20`}>
+                        <img
+                          src={highlightImage}
+                          alt={displayName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className={`w-6 h-6 rounded ${theme.gradient} flex items-center justify-center text-xs font-bold text-white shadow-sm`}>
+                        {initial}
+                      </div>
+                    )}
+                    <span className="text-sm max-w-[120px] truncate">{displayName}</span>
+                    <Icons.ChevronDown size={14} className="opacity-70" />
                   </button>
 
-                  {/* Menú de usuario profesional */}
+                  {/* DROPDOWN USUARIO DESKTOP TEMÁTICO */}
                   {userMenuOpen && (
-                    <div
-                      role="menu"
-                      className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 rounded-lg shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 p-2 z-[80] animate-in fade-in slide-in-from-top-1 duration-150"
+                    <div 
+                      className="absolute right-0 mt-2 w-64 backdrop-blur-xl rounded-lg shadow-2xl py-2 z-50 border border-white/20"
+                      style={{
+                        background: `linear-gradient(135deg, ${theme.navbarGradient})`,
+                      }}
                     >
-                      <div className="px-4 py-3 mb-2 rounded-lg bg-gray-50 dark:bg-gray-800">
-                        <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1 font-medium">
-                          Mi Cuenta
-                        </p>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                          {displayName}
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate mt-0.5">
-                          {user?.email}
-                        </p>
+                      <div className="px-4 py-3 border-b border-white/20">
+                        <p className={`text-sm font-medium ${theme.text.navbar}`}>{displayName}</p>
+                        <p className={`text-xs ${theme.text.navbar}/70`}>{user?.email}</p>
                       </div>
-
-                      <div className="py-1">
-                        <button
-                          onClick={handleProfileClick}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors duration-150 group"
-                        >
-                          <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 grid place-items-center transition-colors duration-150 group-hover:bg-gray-200 dark:group-hover:bg-gray-700">
-                            <Icons.User size={16} className="text-gray-600 dark:text-gray-400" />
-                          </span>
-                          <div className="flex-1">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">Mi Perfil</span>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Ver estadísticas y rendimiento</p>
-                          </div>
-                        </button>
-
-                        <button
-                          onClick={handleEditProfileClick}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors duration-150 group"
-                        >
-                          <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 grid place-items-center transition-colors duration-150 group-hover:bg-gray-200 dark:group-hover:bg-gray-700">
-                            <Icons.Settings size={16} className="text-gray-600 dark:text-gray-400" />
-                          </span>
-                          <div className="flex-1">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">Configuración</span>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Administrar mi cuenta</p>
-                          </div>
-                        </button>
-                      </div>
-
-                      <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
+                      
+                      <button
+                        onClick={handleProfileClick}
+                        className={`w-full flex items-center gap-3 px-4 py-2 text-sm ${theme.text.navbar}/80 hover:bg-white/10 transition-colors`}
+                      >
+                        <Icons.User size={16} />
+                        Mi Perfil
+                      </button>
+                      
+                      <button
+                        onClick={handleEditProfileClick}
+                        className={`w-full flex items-center gap-3 px-4 py-2 text-sm ${theme.text.navbar}/80 hover:bg-white/10 transition-colors`}
+                      >
+                        <Icons.Settings size={16} />
+                        Configuración
+                      </button>
+                      
+                      <div className="border-t border-white/20 mt-2 pt-2">
                         <button
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors duration-150 group"
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-300 hover:bg-red-500/20 transition-colors"
                         >
-                          <span className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 grid place-items-center transition-colors duration-150 group-hover:bg-red-100 dark:group-hover:bg-red-900/30">
-                            <Icons.LogOut size={16} className="text-red-600 dark:text-red-400" />
-                          </span>
-                          <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                            Cerrar sesión
-                          </span>
+                          <Icons.LogOut size={16} />
+                          Cerrar Sesión
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
+              ) : (
+                <div className="hidden lg:flex items-center gap-3">
+                  <NavLink
+                    href="/login"
+                    className={`px-4 py-2 text-sm font-medium ${theme.text.navbar}/80 hover:${theme.text.navbar} transition-colors`}
+                  >
+                    Iniciar Sesión
+                  </NavLink>
+                  <NavLink
+                    href="/signup"
+                    className={`px-4 py-2 ${themeClasses.accent} text-white text-sm font-medium rounded-lg transition-all duration-300 hover:scale-105 shadow-lg`}
+                  >
+                    Registrarse
+                  </NavLink>
+                </div>
               )}
 
-              {/* Botón móvil profesional */}
+              {/* BOTÓN MENÚ MÓVIL TEMÁTICO */}
               <button
-                type="button"
-                className="lg:hidden p-2 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={() => setMobileOpen(true)}
+                className={`lg:hidden p-2 ${theme.text.navbar}/80 hover:${theme.text.navbar} hover:bg-white/10 rounded-lg transition-all duration-300`}
               >
-                <Icons.Menu size={20} className="text-gray-700 dark:text-gray-300" />
+                <Icons.Menu size={20} />
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Panel móvil profesional */}
+      {/* MENÚ MÓVIL TEMÁTICO */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[100]">
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Overlay */}
           <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside
+          
+          {/* Panel Temático */}
+          <div
             ref={mobilePanelRef}
-            className="absolute right-0 top-0 h-full w-[320px] max-w-[85vw] bg-white dark:bg-gray-900 shadow-xl flex flex-col animate-in slide-in-from-right duration-200"
+            className="absolute right-0 top-0 h-full w-80 max-w-[85vw] shadow-2xl border-l border-white/30 backdrop-blur-xl"
+            style={{
+              background: `linear-gradient(135deg, ${theme.navbarGradient.replace('/95', '')})`,
+            }}
           >
-            {/* Header del panel móvil */}
-            <div className="h-[72px] flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-800">
-              <div className="flex items-center gap-3">
-                <span className="inline-grid place-items-center w-8 h-8 rounded-lg bg-gray-900 dark:bg-white shadow-sm">
-                  <Icons.Sparkles size={16} className="text-white dark:text-gray-900" />
-                </span>
-                <span className="text-lg font-medium">
-                  <span className="font-normal text-gray-700 dark:text-gray-300">Magic</span>
-                  <span className="font-semibold ml-1 text-gray-900 dark:text-white">Party</span>
-                </span>
+            {/* Header Temático */}
+            <div className="flex items-center justify-between p-4 border-b border-white/30 bg-black/20">
+              <div className="flex items-center gap-2">
+                <div 
+                  className={`w-8 h-8 rounded-lg ${theme.gradient} flex items-center justify-center shadow-lg`}
+                >
+                  <Icons.Sparkles size={16} className="text-white" />
+                </div>
+                <span className={`${theme.text.white} font-bold`}>Magic Party</span>
               </div>
-              <button 
-                className="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+              <button
                 onClick={() => setMobileOpen(false)}
+                className={`p-2 ${theme.text.white}/80 hover:${theme.text.white} rounded-lg hover:bg-white/20 transition-colors`}
               >
-                <Icons.X size={18} className="text-gray-600 dark:text-gray-400" />
+                <Icons.X size={18} />
               </button>
             </div>
 
-            {/* Navegación móvil */}
-            <nav className="flex-1 overflow-y-auto px-4 py-6">
-              <div className="space-y-1">
-                {NAV_ITEMS.map(({ href, label, Icon }) => {
-                  const active = isActive(href)
-                  return (
-                    <NavLink
-                      key={href}
-                      href={href}
-                      variant="ghost"
-                      className={[
-                        'flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150',
-                        active 
-                          ? 'bg-gray-900 text-white shadow-sm' 
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
-                      ].join(' ')}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <Icon size={16} className={active ? 'text-white' : 'text-gray-500'} />
-                      <span>{label}</span>
-                    </NavLink>
-                  )
-                })}
-              </div>
+            <div className="flex flex-col h-full">
+              {/* Navegación Principal Temática */}
+              <nav className="flex-1 p-4">
+                <div className="space-y-2">
+                  {NAV_ITEMS.map(({ href, label, Icon }) => {
+                    const active = isActive(href)
+                    return (
+                      <NavLink
+                        key={href}
+                        href={href}
+                        onClick={() => setMobileOpen(false)}
+                        className={[
+                          'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 w-full',
+                          active
+                            ? themeClasses.active
+                            : `${theme.text.white}/90 hover:${theme.text.white} hover:bg-white/20`,
+                        ].join(' ')}
+                      >
+                        <Icon size={18} />
+                        <span>{label}</span>
+                      </NavLink>
+                    )
+                  })}
+                </div>
+              </nav>
 
-              {/* Área de usuario móvil */}
-              {!user ? (
-                <div className="mt-8 space-y-3 border-t border-gray-200 dark:border-gray-800 pt-6">
-                  <NavLink
-                    href="/login"
-                    variant="ghost"
-                    className="block px-4 py-3 rounded-lg text-center text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Iniciar Sesión
-                  </NavLink>
-                  <NavLink
-                    href="/signup"
-                    variant="ghost"
-                    className="block px-4 py-3 rounded-lg bg-gray-900 text-white text-center text-sm font-medium shadow-md"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Registrarse
-                  </NavLink>
-                </div>
-              ) : (
-                <div className="mt-8 border-t border-gray-200 dark:border-gray-800 pt-6">
-                  <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 grid place-items-center text-sm font-semibold shadow-sm">
-                      {initial}
+{/* Sección Usuario en Móvil Temática */}
+              <div className="border-t border-white/30 p-4 bg-black/20">
+                {user ? (
+                  <div className="space-y-3">
+                    {/* Info Usuario Temática */}
+                    <div className="flex items-center gap-3 p-3 bg-white/20 rounded-lg backdrop-blur-sm border border-white/20">
+                      {highlightImage ? (
+                        <div className={`w-10 h-10 rounded-lg overflow-hidden shadow-lg ring-2 ring-white/20`}>
+                          <img
+                            src={highlightImage}
+                            alt={displayName}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className={`w-10 h-10 rounded-lg ${theme.gradient} flex items-center justify-center text-sm font-bold text-white shadow-lg`}>
+                          {initial}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium ${theme.text.white} truncate`}>{displayName}</p>
+                        <p className={`text-xs ${theme.text.white}/80 truncate`}>{user?.email}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                        {displayName}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                        {user?.email}
-                      </p>
+
+                    {/* Acciones Usuario Temáticas */}
+                    <div className="space-y-1">
+                      <button
+                        onClick={handleProfileClick}
+                        className={`w-full flex items-center gap-3 px-3 py-2 text-sm ${theme.text.white}/90 hover:${theme.text.white} hover:bg-white/20 rounded-lg transition-colors`}
+                      >
+                        <Icons.User size={16} />
+                        Mi Perfil
+                      </button>
+                      
+                      <button
+                        onClick={handleEditProfileClick}
+                        className={`w-full flex items-center gap-3 px-3 py-2 text-sm ${theme.text.white}/90 hover:${theme.text.white} hover:bg-white/20 rounded-lg transition-colors`}
+                      >
+                        <Icons.Settings size={16} />
+                        Configuración
+                      </button>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-300 hover:bg-red-500/30 rounded-lg transition-colors"
+                      >
+                        <Icons.LogOut size={16} />
+                        Cerrar Sesión
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="space-y-1">
-                    <button
-                      onClick={(e) => {
-                        handleProfileClick(e)
-                        setMobileOpen(false)
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors"
+                ) : (
+                  <div className="space-y-3">
+                    <NavLink
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      className={`block w-full px-4 py-3 text-center text-sm font-medium ${theme.text.white}/90 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur-sm border border-white/20`}
                     >
-                      <Icons.User size={16} className="text-gray-600 dark:text-gray-400" />
-                      <span className="text-sm font-medium">Mi Perfil</span>
-                    </button>
-                    
-                    <button
-                      onClick={(e) => {
-                        handleEditProfileClick(e)
-                        setMobileOpen(false)
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors"
+                      Iniciar Sesión
+                    </NavLink>
+                    <NavLink
+                      href="/signup"
+                      onClick={() => setMobileOpen(false)}
+                      className={`block w-full px-4 py-3 text-center text-sm font-medium ${themeClasses.accent} text-white rounded-lg transition-all duration-300 hover:scale-105 shadow-lg`}
                     >
-                      <Icons.Settings size={16} className="text-gray-600 dark:text-gray-400" />
-                      <span className="text-sm font-medium">Configuración</span>
-                    </button>
-                    
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-left transition-colors mt-3"
-                    >
-                      <Icons.LogOut size={16} className="text-red-600 dark:text-red-400" />
-                      <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                        Cerrar sesión
-                      </span>
-                    </button>
+                      Registrarse
+                    </NavLink>
                   </div>
-                </div>
-              )}
-            </nav>
-          </aside>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </>
