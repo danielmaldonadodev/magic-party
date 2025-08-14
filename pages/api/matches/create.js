@@ -2,14 +2,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { getArchetypeByColors } from '../../../lib/archetypes'
 
-const WUBRG = ['W','U','B','R','G']
+const WUBRG = ['W', 'U', 'B', 'R', 'G']
 
 function normalizeColors(arr) {
-  return Array.from(new Set(
-    (arr || [])
-      .map(c => String(c).toUpperCase())
-      .filter(c => WUBRG.includes(c))
-  ))
+  return Array.from(
+    new Set(
+      (arr || [])
+        .map((c) => String(c).toUpperCase())
+        .filter((c) => WUBRG.includes(c))
+    )
+  )
 }
 
 function extractColorsFromCard(card) {
@@ -18,9 +20,12 @@ function extractColorsFromCard(card) {
     return normalizeColors(card.color_identity)
   }
   if (Array.isArray(card.card_faces) && card.card_faces.length) {
-    const faces = card.card_faces.flatMap(f =>
-      Array.isArray(f?.color_identity) ? f.color_identity :
-      (Array.isArray(f?.colors) ? f.colors : [])
+    const faces = card.card_faces.flatMap((f) =>
+      Array.isArray(f?.color_identity)
+        ? f.color_identity
+        : Array.isArray(f?.colors)
+        ? f.colors
+        : []
     )
     if (faces.length) return normalizeColors(faces)
   }
@@ -31,10 +36,10 @@ function extractColorsFromCard(card) {
 }
 
 async function resolveColorsForParticipant(p) {
-  // 1) Si ya vienen del cliente, úsalos
+  // 1) Ya vienen del cliente
   let colors = normalizeColors(p.commander_colors)
 
-  // 2) Si NO vienen, intenta obtenerlos de Scryfall por scryfall_id
+  // 2) Si no vienen, intenta Scryfall por scryfall_id
   if ((!colors || colors.length === 0) && p.scryfall_id) {
     try {
       const r = await fetch(`https://api.scryfall.com/cards/${p.scryfall_id}`)
@@ -42,13 +47,18 @@ async function resolveColorsForParticipant(p) {
         const card = await r.json()
         colors = extractColorsFromCard(card)
       }
-    } catch {}
+    } catch {
+      // silencioso
+    }
   }
 
-  // 3) Code: usa el del cliente o calcúlalo
-  const code = (typeof p.commander_color_code === 'string' && p.commander_color_code)
-    ? p.commander_color_code.toUpperCase()
-    : (colors.length ? getArchetypeByColors(colors).code : null)
+  // 3) Calcular code si hace falta
+  const code =
+    typeof p.commander_color_code === 'string' && p.commander_color_code
+      ? p.commander_color_code.toUpperCase()
+      : colors.length
+      ? getArchetypeByColors(colors).code
+      : null
 
   return { colors, code }
 }
@@ -61,13 +71,13 @@ export default async function handler(req, res) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // 1) Leer token del header Authorization
+  // 1) Token del usuario (para validar identidad)
   const authHeader = req.headers.authorization
   if (!authHeader) {
     return res.status(401).json({ error: 'No autenticado (sin Authorization)' })
   }
 
-  // 2) Crear cliente con ese token
+  // 2) Cliente con token del usuario (solo para validar al usuario)
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authHeader } },
   })
@@ -81,19 +91,35 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'No autenticado' })
   }
 
-  const { match, participants } = req.body
+  // 4) Cliente Service Role (UN SOLO BLOQUE)
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceRoleKey) {
+    return res
+      .status(500)
+      .json({ error: 'SUPABASE_SERVICE_ROLE_KEY no encontrada en variables de entorno' })
+  }
+  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 
-  const participantIds = new Set((participants || []).map(x => x.user_id).filter(Boolean))
-  if (!participantIds.has(match?.winner)) {
+  // 5) Cuerpo
+  const { match, participants } = req.body || {}
+  if (!match || !Array.isArray(participants) || participants.length < 2) {
+    return res.status(400).json({ error: 'Datos inválidos: se requieren match y 2+ participantes' })
+  }
+
+  // Ganador debe estar entre participantes
+  const participantIds = new Set(participants.map((x) => x.user_id).filter(Boolean))
+  if (!match?.winner || !participantIds.has(match.winner)) {
     return res.status(400).json({ error: 'El ganador debe estar entre los participantes.' })
   }
 
-  // 4) Insertar partida
-  const { data: matchData, error: matchError } = await supabase
+  // 6) Insertar partida con Service Role (bypassa RLS y permite triggers)
+  const { data: matchData, error: matchError } = await supabaseAdmin
     .from('matches')
     .insert({
       ...match,
-      user_id: user.id // dueño de la partida
+      user_id: user.id, // dueño de la partida
     })
     .select()
     .single()
@@ -102,15 +128,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: matchError.message })
   }
 
-  // 5) Debug: Veamos qué datos estamos intentando insertar
-  console.log('Usuario autenticado:', user.id)
-  console.log('Participantes originales:', participants)
-
-
+  // 7) Preparar datos de participantes (resolviendo colores si hace falta)
   const participantsData = await Promise.all(
-    (participants || []).map(async (p) => {
+    participants.map(async (p) => {
       const { colors, code } = await resolveColorsForParticipant(p)
-
       return {
         match_id: matchData.id,
         user_id: p.user_id,
@@ -128,64 +149,46 @@ export default async function handler(req, res) {
         won_by_combo: !!p.won_by_combo,
         kills: p.kills ? parseInt(p.kills) : null,
 
-        // 💾 ya resuelto (cliente o Scryfall)
         commander_colors: colors,
         commander_color_code: code,
       }
     })
   )
 
-  // Debug: Verificar variables de entorno
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
-  if (!serviceRoleKey) {
-    return res.status(500).json({ 
-      error: 'SUPABASE_SERVICE_ROLE_KEY no encontrada en variables de entorno' 
-    })
-  }
-
-  // Crear cliente admin sin auth headers
-  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  })
-
-  // Probar primero con un solo participante
-  console.log('Intentando insertar primer participante:', participantsData[0])
-  
-  const { error: testError } = await supabaseAdmin
-    .from('match_participants')
-    .insert(participantsData[0])
-
-  if (testError) {
-    console.error('Error en test insert:', testError)
-    return res.status(400).json({ 
-      error: 'Error en inserción de prueba',
-      originalError: testError.message,
-      details: testError.details,
-      hint: testError.hint,
-      code: testError.code
-    })
-  }
-
-  // Si el primero funciona, insertar el resto
-  if (participantsData.length > 1) {
-    const { error: partError } = await supabaseAdmin
-      .from('match_participants')
-      .insert(participantsData.slice(1))
-      
-    if (partError) {
-      console.error('Error en batch insert:', partError)
-      return res.status(400).json({ 
-        error: partError.message,
-        details: partError.details,
-        hint: partError.hint,
-        code: partError.code
+  // 8) Insert en match_participants con Service Role
+  //    (opcionalmente probamos uno primero para logs más claros)
+  try {
+    // Inserción de prueba (el primero)
+    const first = participantsData[0]
+    const { error: testError } = await supabaseAdmin.from('match_participants').insert(first)
+    if (testError) {
+      return res.status(400).json({
+        error: 'Error en inserción de prueba de participante',
+        originalError: testError.message,
+        details: testError.details,
+        hint: testError.hint,
+        code: testError.code,
       })
     }
+
+    // Si hay más, insertamos el resto en batch
+    if (participantsData.length > 1) {
+      const rest = participantsData.slice(1)
+      const { error: partError } = await supabaseAdmin.from('match_participants').insert(rest)
+      if (partError) {
+        return res.status(400).json({
+          error: partError.message,
+          details: partError.details,
+          hint: partError.hint,
+          code: partError.code,
+        })
+      }
+    }
+  } catch (e) {
+    // por si algo inesperado explota
+    return res.status(500).json({ error: 'Error insertando participantes', message: String(e) })
   }
-  console.log('✅ Todos los participantes insertados correctamente')
-  return res.status(200).json({ success: true, match: matchData })
+
+  // 9) OK
+  return res.status(201).json({ success: true, match: matchData })
 }

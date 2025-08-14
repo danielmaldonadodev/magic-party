@@ -263,12 +263,20 @@ export default function MatchDetail() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) throw new Error('No autenticado')
 
-      const resp = await fetch(`/api/matches/${encodeURIComponent(id)}/delete`, {
-        method: 'POST',
+      const resp = await fetch(`/api/matches/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
-      const data = await resp.json().catch(() => ({}))
-      if (!resp.ok) throw new Error(data.error || 'Error desconocido')
+
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => '')
+        const msg = text || (resp.status === 403
+          ? 'No tienes permisos para borrar esta partida.'
+          : resp.status === 404
+            ? 'La partida no existe o no es tuya.'
+            : 'Error desconocido al borrar.')
+        throw new Error(msg)
+      }
 
       await router.replace('/matches')
     } catch (e) {

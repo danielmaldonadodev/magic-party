@@ -338,65 +338,49 @@ function useThemeRotation(intervalMs = 40000) {
 /* ===============================================================
    AUTH / ROLES: detectar si el usuario es admin
    =============================================================== */
-function useAdminGuard() {
-  const [session, setSession] = useState(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [authReady, setAuthReady] = useState(false)
+  export function useAdminGuard() {
+    const [session, setSession] = useState(null)
+    const [isAdmin, setIsAdmin] = useState(false)
+    const [authReady, setAuthReady] = useState(false)
 
-  const computeIsAdmin = (user) => {
-    if (!user) return false
-    const meta = user.user_metadata || {}
-    const app = user.app_metadata || {}
-    // 3 vias: role, is_admin, roles[]
-    if (meta.role === 'admin') return true
-    if (meta.is_admin === true) return true
-    if (Array.isArray(app.roles) && app.roles.includes('admin')) return true
-    return false
-  }
-
-  useEffect(() => {
-    let active = true
-    ;(async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!active) return
-      setSession(session)
-      setIsAdmin(computeIsAdmin(session?.user))
-      setAuthReady(true)
-    })()
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setIsAdmin(computeIsAdmin(session?.user))
-    })
-
-    return () => {
-      active = false
-      listener?.subscription?.unsubscribe?.()
+    const computeIsAdmin = (user) => {
+      if (!user) return false
+      const meta = user.user_metadata || {}
+      const app = user.app_metadata || {}
+      // 3 vías para detectar admin:
+      if (meta.role === 'admin') return true
+      if (meta.is_admin === true) return true
+      if (Array.isArray(app.roles) && app.roles.includes('admin')) return true
+      if (app.is_admin === true) return true
+      return false
     }
-  }, [])
 
-  // (Opcional) consulta a profiles.is_admin si existe
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      const userId = session?.user?.id
-      if (!userId) return
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', userId)
-          .single()
-        if (!cancelled && !error && data?.is_admin) {
-          setIsAdmin(true)
-        }
-      } catch (_) {}
-    })()
-    return () => { cancelled = true }
-  }, [session?.user?.id])
+    useEffect(() => {
+      let active = true
 
-  return { session, isAdmin, authReady }
-}
+      // Obtener sesión actual
+      ;(async () => {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!active) return
+        setSession(session)
+        setIsAdmin(computeIsAdmin(session?.user))
+        setAuthReady(true)
+      })()
+
+      // Escuchar cambios de sesión
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session)
+        setIsAdmin(computeIsAdmin(session?.user))
+      })
+
+      return () => {
+        active = false
+        listener?.subscription?.unsubscribe?.()
+      }
+    }, [])
+
+    return { session, isAdmin, authReady }
+  }
 
 /* ===============================================================
    COMPONENTES PROFESIONALES
@@ -869,18 +853,38 @@ export default function FormatsPage() {
 
   const handleDelete = async (id) => {
     setError(null)
+
     // Guard de seguridad en cliente
     if (!isAdmin) {
       setError('No tienes permisos para borrar formatos.')
       return false
     }
-    const { error } = await supabase.from('games').delete().eq('id', id)
-    if (error) {
-      setError(error.message)
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        setError('No autenticado.')
+        return false
+      }
+
+      const resp = await fetch(`/api/formats/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => '')
+        setError(text || 'No se pudo borrar el formato.')
+        return false
+      }
+
+      // Optimiza UI localmente
+      setFormats(prev => prev.filter(f => f.id !== id))
+      return true
+    } catch (e) {
+      setError(e.message || 'Error inesperado al borrar el formato.')
       return false
     }
-    setFormats(prev => prev.filter(f => f.id !== id))
-    return true
   }
 
   const isEmpty = useMemo(() => !loading && !error && formats.length === 0, [loading, error, formats])

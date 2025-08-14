@@ -635,190 +635,158 @@ function ProfessionalMatchSkeleton({ theme, index = 0 }) {
   )
 }
 
-function ProfessionalMatchCard({ match, formatName, winnerNickname, parts, bannerSrc, winnerPart, nickById, theme, index = 0 }) {
-  const [isHovered, setIsHovered] = useState(false)
-  
-  const getMatchPerformance = (playerCount) => {
-    if (playerCount >= 5) return { 
-      level: 'epic', 
-      color: 'from-purple-500 to-indigo-600', 
-      bg: 'bg-purple-50', 
-      text: 'text-purple-800', 
-      ring: 'ring-purple-200',
-      label: 'Épica'
-    }
-    if (playerCount === 4) return { 
-      level: 'standard', 
-      color: 'from-blue-500 to-blue-600', 
-      bg: 'bg-blue-50', 
-      text: 'text-blue-800', 
-      ring: 'ring-blue-200',
-      label: 'Estándar'
-    }
-    if (playerCount === 3) return { 
-      level: 'small', 
-      color: 'from-amber-500 to-orange-600', 
-      bg: 'bg-amber-50', 
-      text: 'text-amber-800', 
-      ring: 'ring-amber-200',
-      label: 'Pequeña'
-    }
-    return { 
-      level: 'duo', 
-      color: 'from-emerald-500 to-green-600', 
-      bg: 'bg-emerald-50', 
-      text: 'text-emerald-800', 
-      ring: 'ring-emerald-200',
-      label: 'Duelo'
-    }
-  }
+  function ProfessionalMatchCard({
+    match,
+    formatName,
+    winnerNickname,
+    parts,
+    bannerSrc,
+    winnerPart,
+    nickById,
+    theme,
+    index = 0,
+  }) {
+    const [isHovered, setIsHovered] = useState(false)
 
-  const performance = getMatchPerformance(parts.length)
+    const getMatchPerformance = (playerCount) => {
+      if (playerCount >= 5) return { level:'epic', color:'from-purple-500 to-indigo-600', bg:'bg-purple-50', text:'text-purple-800', ring:'ring-purple-200', label:'Épica' }
+      if (playerCount === 4) return { level:'standard', color:'from-blue-500 to-blue-600', bg:'bg-blue-50', text:'text-blue-800', ring:'ring-blue-200', label:'Estándar' }
+      if (playerCount === 3) return { level:'small', color:'from-amber-500 to-orange-600', bg:'bg-amber-50', text:'text-amber-800', ring:'ring-amber-200', label:'Pequeña' }
+      return { level:'duo', color:'from-emerald-500 to-green-600', bg:'bg-emerald-50', text:'text-emerald-800', ring:'ring-emerald-200', label:'Duelo' }
+    }
 
-  return (
-    <div 
-      className="group crystal-card animate-professional-fade-in"
-      style={{ 
-        animationDelay: `${index * 100}ms`,
-        '--glow-color': theme.colors.glowColor 
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Glow effect */}
-      <div className={`absolute inset-0 rounded-xl bg-gradient-to-r ${performance.color} opacity-0 blur-xl transition-all duration-700 group-hover:opacity-10 -z-10`} />
-      
-      <Link href={`/matches/${match.id}`} className="block focus:outline-none">
-        <Card
-          className="relative overflow-hidden bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-500 hover:scale-[1.02] focus:ring-2 focus:ring-gray-500/20 focus:border-gray-400"
-          padding="none"
-        >
-          {/* Performance indicator bar */}
-          <div className={`h-1 bg-gradient-to-r ${performance.color}`} />
-          
-          {/* Hero Image Section */}
-          <div className="relative aspect-[4/3] overflow-hidden">
-            {bannerSrc ? (
-              <Image
-                src={bannerSrc}
-                alt={winnerPart?.commander_name ? `Comandante: ${winnerPart.commander_name}` : 'Comandante del ganador'}
-                fill
-                className="object-cover object-top transition-transform duration-700 group-hover:scale-110"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-sm text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] transition-transform duration-1000 group-hover:translate-x-[100%]" />
-                <div className="relative z-10 text-center">
-                  <svg className="h-8 w-8 mb-2 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <div>Sin imagen de comandante</div>
+    const performance = getMatchPerformance(parts.length)
+
+    return (
+      <div
+        className="group crystal-card animate-professional-fade-in relative"
+        style={{ animationDelay: `${index * 100}ms`, '--glow-color': theme.colors.glowColor }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className={`absolute inset-0 rounded-xl bg-gradient-to-r ${performance.color} opacity-0 blur-xl transition-all duration-700 group-hover:opacity-10 -z-10`} />
+
+        {/* 🔗 Solo link al detalle */}
+        <Link href={`/matches/${match.id}`} className="block focus:outline-none">
+          <Card
+            className="relative overflow-hidden bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-500 hover:scale-[1.02] focus:ring-2 focus:ring-gray-500/20 focus:border-gray-400"
+            padding="none"
+          >
+            <div className={`h-1 bg-gradient-to-r ${performance.color}`} />
+
+            <div className="relative aspect-[4/3] overflow-hidden">
+              {bannerSrc ? (
+                <Image
+                  src={bannerSrc}
+                  alt={winnerPart?.commander_name ? `Comandante: ${winnerPart.commander_name}` : 'Comandante del ganador'}
+                  fill
+                  className="object-cover object-top transition-transform duration-700 group-hover:scale-110"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] transition-transform duration-1000 group-hover:translate-x-[100%]" />
+                  <div className="relative z-10 text-center">
+                    <svg className="h-8 w-8 mb-2 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div>Sin imagen de comandante</div>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Premium overlay gradients */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
-
-            {/* Floating badges */}
-            <div className="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-all duration-300 group-hover:bg-black/70">
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {formatDate(match.played_at)}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:scale-105 ${performance.bg} ${performance.text} ring-2 ring-white/20`}>
-                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
-                </svg>
-                {formatName}
-              </span>
-            </div>
-
-            {/* Hero content */}
-            <div className="absolute bottom-3 left-3 right-3 space-y-3">
-              {winnerPart?.commander_name && (
-                <h3 className="line-clamp-2 text-lg font-bold leading-tight text-white drop-shadow-lg transition-all duration-300 group-hover:drop-shadow-2xl">
-                  {winnerPart.commander_name}
-                </h3>
               )}
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/95 backdrop-blur-sm px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-lg ring-1 ring-black/5 transition-all duration-300 group-hover:bg-white group-hover:scale-105">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
-                  <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </div>
-                <span className="text-gray-700">Ganador:</span>
-                <span className="text-gray-900">{winnerNickname}</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Content section */}
-          <div className="p-6 space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className={`text-sm font-bold ${theme.text.strong} uppercase tracking-wide`}>Jugadores</h4>
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${performance.bg} ${performance.text}`}>
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
+
+              <div className="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-all duration-300 group-hover:bg-black/70">
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {parts.length} • {performance.label}
+                  {formatDate(match.played_at)}
+                </span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:scale-105 ${performance.bg} ${performance.text} ring-2 ring-white/20`}>
+                  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
+                  </svg>
+                  {formatName}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {parts.map((p, pIndex) => {
-                  const isWinner = p.user_id === match.winner
-                  return (
-                    <span 
-                      key={p.user_id}
-                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-sm ${
-                        isWinner
-                          ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 ring-2 ring-amber-200 shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                      style={{ 
-                        animationDelay: `${(index * 100) + (pIndex * 50)}ms`,
-                      }}
-                    >
-                      {isWinner && (
-                        <svg className="h-3 w-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      )}
-                      {nickById[p.user_id] ?? p.user_id}
-                    </span>
-                  )
-                })}
+
+              <div className="absolute bottom-3 left-3 right-3 space-y-3">
+                {winnerPart?.commander_name && (
+                  <h3 className="line-clamp-2 text-lg font-bold leading-tight text-white drop-shadow-lg transition-all duration-300 group-hover:drop-shadow-2xl">
+                    {winnerPart.commander_name}
+                  </h3>
+                )}
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/95 backdrop-blur-sm px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-lg ring-1 ring-black/5 transition-all duration-300 group-hover:bg-white group-hover:scale-105">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
+                    <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-700">Ganador:</span>
+                  <span className="text-gray-900">{winnerNickname}</span>
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Action footer */}
-          <div className="border-t border-gray-100 px-6 py-4 bg-gray-50/50">
-            <div className={`flex items-center justify-center gap-2 rounded border-2 border-dashed transition-all duration-300 py-2.5 px-4 text-sm font-medium ${
-              isHovered 
-                ? 'border-gray-300 bg-white text-gray-700 shadow-sm' 
-                : 'border-gray-200 bg-transparent text-gray-500'
-            }`}>
-              <svg className={`h-4 w-4 transition-all duration-300 ${isHovered ? 'translate-x-0.5' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              <span>Ver Detalles</span>
-              <svg className={`h-4 w-4 transition-all duration-300 ${isHovered ? 'translate-x-0.5 scale-110' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className={`text-sm font-bold ${theme.text.strong} uppercase tracking-wide`}>Jugadores</h4>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${performance.bg} ${performance.text}`}>
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                    </svg>
+                    {parts.length} • {performance.label}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {parts.map((p, pIndex) => {
+                    const isWinner = p.user_id === match.winner
+                    return (
+                      <span
+                        key={p.user_id}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-sm ${
+                          isWinner
+                            ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 ring-2 ring-amber-200 shadow-sm'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                        style={{ animationDelay: `${(index * 100) + (pIndex * 50)}ms` }}
+                      >
+                        {isWinner && (
+                          <svg className="h-3 w-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        )}
+                        {nickById[p.user_id] ?? p.user_id}
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        </Card>
-      </Link>
-    </div>
-  )
-}
+
+            <div className="border-t border-gray-100 px-6 py-4 bg-gray-50/50">
+              <div className={`flex items-center justify-center gap-2 rounded border-2 border-dashed transition-all duration-300 py-2.5 px-4 text-sm font-medium ${
+                isHovered ? 'border-gray-300 bg-white text-gray-700 shadow-sm' : 'border-gray-200 bg-transparent text-gray-500'
+              }`}>
+                <svg className={`h-4 w-4 transition-all duration-300 ${isHovered ? 'translate-x-0.5' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <span>Ver Detalles</span>
+                <svg className={`h-4 w-4 transition-all duration-300 ${isHovered ? 'translate-x-0.5 scale-110' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </Card>
+        </Link>
+      </div>
+    )
+  }
 
 function ProfessionalEmptyState({ theme }) {
   return (
@@ -923,33 +891,86 @@ function ProfessionalMobileBar({ theme }) {
 /* ===============================================================
   MAIN COMPONENT
   =============================================================== */
-export default function ProfessionalMatchesList() {
+export default function ProfessionalMatchesList({
+  initialMatches = [],
+  initialProfiles = [],
+  initialFormats = [],
+  initialParticipants = []
+}) {
   const { theme } = useThemeRotation(40000)
-  
+
   // Datos
-  const [matches, setMatches] = useState([])
-  const [profiles, setProfiles] = useState([])
-  const [formats, setFormats] = useState([])
-  const [participants, setParticipants] = useState([])
+  const [matches, setMatches] = useState(initialMatches)
+  const [profiles, setProfiles] = useState(initialProfiles)
+  const [formats, setFormats] = useState(initialFormats)
+  const [participants, setParticipants] = useState(initialParticipants)
+
+  // Usuario y permisos
+  const [currentUser, setCurrentUser] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   // UI
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false) // Cambiado: no loading inicial si hay datos SSR
   const [error, setError] = useState(null)
 
   // Filtros
-  const [selectedFormat, setSelectedFormat] = useState('') // game_id
-  const [selectedPlayer, setSelectedPlayer] = useState('') // user_id
-  const [query, setQuery] = useState('') // texto libre
+  const [selectedFormat, setSelectedFormat] = useState('')
+  const [selectedPlayer, setSelectedPlayer] = useState('')
+  const [query, setQuery] = useState('')
 
   // Paginación
   const PAGE_SIZE = 12
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
+  // MEJORA 1: Función para cargar más matches del servidor
+  const loadMoreMatches = async () => {
+    const from = matches.length
+    const to = from + PAGE_SIZE - 1
+    const { data, error } = await supabase
+      .from('matches')
+      .select('*')
+      .order('played_at', { ascending: false })
+      .range(from, to)
+    if (error) return setError(error.message)
+    setMatches(prev => [...prev, ...(data || [])])
+  }
+
   useEffect(() => {
     let ignore = false
-    async function loadAll() {
-      setLoading(true); setError(null)
+    async function loadInitialData() {
+      // Solo cargar si no hay datos iniciales del SSR
+      if (matches.length > 0) {
+        setLoading(false)
+        // Cargar usuario actual
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setCurrentUser(user)
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', user.id)
+            .single()
+          if (profile?.is_admin) setIsAdmin(true)
+        }
+        return
+      }
 
+      setLoading(true)
+      setError(null)
+
+      // Obtener usuario actual
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUser(user)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+        if (profile?.is_admin) setIsAdmin(true)
+      }
+
+      // Cargar datos si no vienen del SSR
       const [
         { data: profData, error: profErr },
         { data: gameData, error: gameErr },
@@ -963,6 +984,7 @@ export default function ProfessionalMatchesList() {
           .select(`
             match_id,
             user_id,
+            result,
             commander_image,
             commander_image_small,
             commander_image_normal,
@@ -974,8 +996,9 @@ export default function ProfessionalMatchesList() {
 
       if (ignore) return
       const firstError = profErr || gameErr || partErr || matchErr
-      if (firstError) setError(firstError.message || 'Error al cargar datos')
-      else {
+      if (firstError) {
+        setError(firstError.message || 'Error al cargar datos')
+      } else {
         setProfiles(profData || [])
         setFormats(gameData || [])
         setParticipants(partData || [])
@@ -983,11 +1006,11 @@ export default function ProfessionalMatchesList() {
       }
       setLoading(false)
     }
-    loadAll()
+    loadInitialData()
     return () => { ignore = true }
-  }, [])
+  }, [matches.length])
 
-  // Mapas auxiliares
+  // ✅ ARREGLO 1: Mapas auxiliares ANTES de filteredMatches (evitar TDZ)
   const nickById = useMemo(() => {
     const acc = {}
     for (const p of profiles) acc[p.id] = p.nickname
@@ -1009,7 +1032,7 @@ export default function ProfessionalMatchesList() {
     return acc
   }, [participants])
 
-  // Filtro + búsqueda
+  // ✅ ARREGLO 2: Filtro + búsqueda (ahora sí puede usar los mapas + dependencias correctas)
   const filteredMatches = useMemo(() => {
     const q = query.trim().toLowerCase()
     return matches.filter((m) => {
@@ -1030,25 +1053,58 @@ export default function ProfessionalMatchesList() {
         playerNicks.includes(q)
       )
     })
-  }, [matches, participantsByMatchId, selectedFormat, selectedPlayer, query, formatById, nickById])
+  }, [matches, selectedFormat, selectedPlayer, query, participantsByMatchId, formatById, nickById])
 
-  // Reset de paginación con cambios en filtros/búsqueda
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [selectedFormat, selectedPlayer, query])
+  const visible = filteredMatches.slice(0, visibleCount)
+
+  // MEJORA 2B: Cargar participantes solo de partidas visibles
+  useEffect(() => {
+    const ids = visible.map(m => m.id)
+    if (!ids.length) return
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('match_participants')
+        .select(`
+          match_id, user_id, result,
+          commander_name,
+          commander_image, commander_image_small,
+          commander_image_normal, commander_art_crop
+        `)
+        .in('match_id', ids)
+      if (!cancelled && !error && data) {
+        // Fusiona con los que ya hay (por si cambió el "visible")
+        const byId = new Map()
+        for (const p of participants) {
+          const key = `${p.match_id}:${p.user_id}`
+          byId.set(key, p)
+        }
+        for (const p of data) {
+          const key = `${p.match_id}:${p.user_id}`
+          byId.set(key, p)
+        }
+        setParticipants(Array.from(byId.values()))
+      }
+    })()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleCount, filteredMatches])
+
+  // ✅ ARREGLO 3: Reset de paginación con limpieza opcional de participantes
+  useEffect(() => { 
+    setVisibleCount(PAGE_SIZE)
+    // ✅ Opcional: vaciar participants para forzar recarga limpia
+    setParticipants([])
+  }, [selectedFormat, selectedPlayer, query])
 
   if (loading) {
     return (
-      <div 
-        className="min-h-screen theme-transition pb-24"
-        style={{ 
-          background: `linear-gradient(135deg, ${theme.backgroundGradient})`,
-        }}
-      >
+      <div className="min-h-screen theme-transition pb-24" style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}>
         <div className="fixed top-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
         <div className="fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 space-y-12 sm:space-y-16">
           <ProfessionalHero theme={theme} />
-          
           <ProfessionalFilters
             theme={theme}
             formats={formats}
@@ -1062,13 +1118,11 @@ export default function ProfessionalMatchesList() {
             onClear={() => { setSelectedFormat(''); setSelectedPlayer(''); setQuery('') }}
             filteredMatches={filteredMatches}
           />
-          
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <ProfessionalMatchSkeleton key={i} theme={theme} index={i} />
             ))}
           </div>
-          
           <ProfessionalFab theme={theme} />
           <ProfessionalMobileBar theme={theme} />
         </div>
@@ -1078,15 +1132,9 @@ export default function ProfessionalMatchesList() {
 
   if (error) {
     return (
-      <div 
-        className="min-h-screen theme-transition pb-24"
-        style={{ 
-          background: `linear-gradient(135deg, ${theme.backgroundGradient})`,
-        }}
-      >
+      <div className="min-h-screen theme-transition pb-24" style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 space-y-12 sm:space-y-16">
           <ProfessionalHero theme={theme} />
-          
           <div className="crystal-card">
             <Card className="border border-red-300 bg-red-50/90 backdrop-blur-sm shadow-lg">
               <div className="rounded-xl border-2 border-red-300 bg-red-100/50 p-8 text-center">
@@ -1100,7 +1148,6 @@ export default function ProfessionalMatchesList() {
               </div>
             </Card>
           </div>
-          
           <ProfessionalFab theme={theme} />
           <ProfessionalMobileBar theme={theme} />
         </div>
@@ -1108,25 +1155,15 @@ export default function ProfessionalMatchesList() {
     )
   }
 
-  const visible = filteredMatches.slice(0, visibleCount)
   const canLoadMore = visibleCount < filteredMatches.length
 
   return (
-    <div 
-      className="min-h-screen theme-transition pb-24"
-      style={{ 
-        background: `linear-gradient(135deg, ${theme.backgroundGradient})`,
-      }}
-    >
-      {/* Decorative background elements */}
+    <div className="min-h-screen theme-transition pb-24" style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}>
       <div className="fixed top-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
       <div className="fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 space-y-12 sm:space-y-16">
-        {/* Hero Section */}
         <ProfessionalHero theme={theme} />
-
-        {/* Filters */}
         <ProfessionalFilters
           theme={theme}
           formats={formats}
@@ -1141,21 +1178,10 @@ export default function ProfessionalMatchesList() {
           filteredMatches={filteredMatches}
         />
 
-        {/* Matches Content */}
         {filteredMatches.length === 0 ? (
           <ProfessionalEmptyState theme={theme} />
         ) : (
           <div className="space-y-8">
-            {/* Results header */}
-            <div>
-              <h2 className={`text-2xl font-bold ${theme.text.strong} mb-1`}>
-                Partidas Encontradas
-              </h2>
-              <p className={`text-sm ${theme.text.soft}`}>
-                {filteredMatches.length} partida{filteredMatches.length !== 1 ? 's' : ''} en el historial
-              </p>
-            </div>
-
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {visible.map((m, index) => {
                 const winnerNickname = nickById[m.winner] ?? '—'
@@ -1184,6 +1210,8 @@ export default function ProfessionalMatchesList() {
                     nickById={nickById}
                     theme={theme}
                     index={index}
+                    canComplete={showComplete}
+                    onDelete={canDelete ? deleteMatch : null}
                   />
                 )
               })}
@@ -1192,7 +1220,14 @@ export default function ProfessionalMatchesList() {
             {canLoadMore && (
               <div className="flex justify-center">
                 <button
-                  onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                  // MEJORA 3C: Botón "Cargar más" mejorado
+                  onClick={async () => {
+                    // si ya no hay más matches cargados para mostrar, trae más del backend
+                    if (visibleCount + PAGE_SIZE > matches.length) {
+                      await loadMoreMatches()
+                    }
+                    setVisibleCount(c => c + PAGE_SIZE)
+                  }}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white/80 backdrop-blur-sm px-8 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-all duration-300 hover:border-gray-400 hover:bg-white hover:shadow-md hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-500/20"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1205,43 +1240,27 @@ export default function ProfessionalMatchesList() {
           </div>
         )}
 
-        {/* Acciones responsivas */}
         <ProfessionalFab theme={theme} />
         <ProfessionalMobileBar theme={theme} />
 
-        {/* Theme Indicator Footer */}
         <footer className="py-12 text-center">
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-3">
-              <span className={`text-sm font-medium ${theme.text.soft}`}>
-                Tema actual:
-              </span>
+              <span className={`text-sm font-medium ${theme.text.soft}`}>Tema actual:</span>
               <div className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 rounded-full shadow-lg"
-                  style={{ background: `linear-gradient(45deg, ${theme.colors.primary})` }}
-                />
-                <span className={`font-bold ${theme.text.strong}`}>
-                  {theme.label}
-                </span>
+                <div className="w-4 h-4 rounded-full shadow-lg" style={{ background: `linear-gradient(45deg, ${theme.colors.primary})` }} />
+                <span className={`font-bold ${theme.text.strong}`}>{theme.label}</span>
               </div>
             </div>
-            
-            {/* Theme progress indicator */}
             <div className="flex items-center justify-center gap-2">
               {MTG_PROFESSIONAL_THEMES.map((t, i) => (
                 <div
                   key={t.key}
-                  className={`h-2 rounded-full transition-all duration-500 ${
-                    t.key === theme.key ? 'w-8 opacity-100' : 'w-2 opacity-40'
-                  }`}
-                  style={{ 
-                    background: `linear-gradient(45deg, ${t.colors.primary})` 
-                  }}
+                  className={`h-2 rounded-full transition-all duration-500 ${t.key === theme.key ? 'w-8 opacity-100' : 'w-2 opacity-40'}`}
+                  style={{ background: `linear-gradient(45deg, ${t.colors.primary})` }}
                 />
               ))}
             </div>
-            
             <p className={`text-sm ${theme.text.soft} opacity-75`}>
               El tema cambia automáticamente cada 40 segundos
             </p>
@@ -1264,7 +1283,7 @@ export async function getServerSideProps({ req, res }) {
       supabase.from('profiles').select('id, nickname'),
       supabase.from('matches').select('*').order('played_at', { ascending: false }),
       supabase.from('match_participants').select(`
-        match_id, user_id,
+        match_id, user_id, result,
         commander_name,
         commander_image, commander_image_small, commander_image_normal, commander_art_crop
       `),

@@ -5,7 +5,7 @@
   import Image from 'next/image'
   import Card from '../components/Card'
   import ImageFallback from '../components/ImageFallback'
-  import { createSupabaseServerClient } from '../lib/supabaseServer'
+  import { createServiceClient } from '../lib/supabaseServer'
   import { supabase } from '../lib/supabaseClient'
   import { getArchetypeForCommander } from '../lib/archetypes'
   import ManaSymbol from '../components/ManaSymbol'
@@ -1075,11 +1075,13 @@ function ProfessionalCommanderCard({ commander, theme, isCommanderOfMonth = fals
   /* ===============================================================
     SSR - DATOS DEL SERVIDOR (MANTENIDO IGUAL)
     =============================================================== */
+
 export async function getServerSideProps({ req, res }) {
-  const supabase = createSupabaseServerClient(req, res)
+  // CAMBIO: Usar service role para bypass RLS en datos públicos de la home
+  const supabase = createServiceClient()
 
   try {
-    // 1) Cargar datos base en paralelo
+    // 1) Cargar datos base en paralelo - TODO IGUAL
     const [profilesRes, matchesRes, participantsRes, gamesRes] = await Promise.allSettled([
       supabase.from('profiles').select('id, nickname, email, avatar_url, highlight_image_preference'),
       supabase.from('matches').select('id, winner, played_at, game_id').order('played_at', { ascending: false }),
@@ -1155,7 +1157,7 @@ export async function getServerSideProps({ req, res }) {
     // 4) Jugador del mes (RPC: nickname y avatar desde profiles)
     let playerOfMonth = null
     try {
-      const { data: top, error: topErr } = await supabase.rpc('top_player_last_30d').single()
+      const { data: top, error: topErr } = await supabase.rpc('top_player_last_30d_v2').single()
       if (topErr) throw topErr
 
       if (top) {
@@ -1198,7 +1200,6 @@ export async function getServerSideProps({ req, res }) {
           hero_image: heroImage,
           hero_is_card: !!heroIsCard,
           hero_colors: heroColors,
-          // opcional: top.best_commander_name si lo quieres mostrar en la UI
         }
       }
     } catch (e) {
