@@ -1210,7 +1210,6 @@ export default function ProfessionalMatchesList({
                     nickById={nickById}
                     theme={theme}
                     index={index}
-                    canComplete={showComplete}
                     onDelete={canDelete ? deleteMatch : null}
                   />
                 )
