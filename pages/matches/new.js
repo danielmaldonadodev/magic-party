@@ -850,7 +850,7 @@
 
         // 4) Éxito → redirigir
         setSuccess('¡Partida creada! Vamos a completar resultados…')
-        router.replace(`/matches/${out.match.id}/complete`)
+        router.replace(`/matches/`)
 
         } catch (err) {
           console.error(err)
@@ -864,7 +864,8 @@
 
     if (loading) {
       return (
-        <div className="min-h-screen theme-transition" style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}>
+        <div className="min-h-screen theme-transition" style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})`,
+  '--glow-color': theme.colors.glowColor }}>
           <div className="flex items-center justify-center min-h-screen">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center mx-auto shadow-lg">

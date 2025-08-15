@@ -374,6 +374,33 @@ function upgradeScryfallUrl(url) {
 }
 
 /* ===============================================================
+  DELETE MATCH FUNCTION
+  =============================================================== */
+async function deleteMatch(matchId) {
+  try {
+    // Primero eliminar participantes
+    const { error: participantsError } = await supabase
+      .from('match_participants')
+      .delete()
+      .eq('match_id', matchId)
+    
+    if (participantsError) throw participantsError
+
+    // Luego eliminar la partida
+    const { error: matchError } = await supabase
+      .from('matches')
+      .delete()
+      .eq('id', matchId)
+    
+    if (matchError) throw matchError
+    return true
+  } catch (error) {
+    console.error('Error deleting match:', error)
+    return false
+  }
+}
+
+/* ===============================================================
   PROFESSIONAL COMPONENTS
   =============================================================== */
 
@@ -635,158 +662,189 @@ function ProfessionalMatchSkeleton({ theme, index = 0 }) {
   )
 }
 
-  function ProfessionalMatchCard({
-    match,
-    formatName,
-    winnerNickname,
-    parts,
-    bannerSrc,
-    winnerPart,
-    nickById,
-    theme,
-    index = 0,
-  }) {
-    const [isHovered, setIsHovered] = useState(false)
+function ProfessionalMatchCard({
+  match,
+  formatName,
+  winnerNickname,
+  parts,
+  bannerSrc,
+  winnerPart,
+  nickById,
+  theme,
+  index = 0,
+  canDelete = false,
+  onDelete = null,
+}) {
+  const [isHovered, setIsHovered] = useState(false)
 
-    const getMatchPerformance = (playerCount) => {
-      if (playerCount >= 5) return { level:'epic', color:'from-purple-500 to-indigo-600', bg:'bg-purple-50', text:'text-purple-800', ring:'ring-purple-200', label:'Épica' }
-      if (playerCount === 4) return { level:'standard', color:'from-blue-500 to-blue-600', bg:'bg-blue-50', text:'text-blue-800', ring:'ring-blue-200', label:'Estándar' }
-      if (playerCount === 3) return { level:'small', color:'from-amber-500 to-orange-600', bg:'bg-amber-50', text:'text-amber-800', ring:'ring-amber-200', label:'Pequeña' }
-      return { level:'duo', color:'from-emerald-500 to-green-600', bg:'bg-emerald-50', text:'text-emerald-800', ring:'ring-emerald-200', label:'Duelo' }
-    }
-
-    const performance = getMatchPerformance(parts.length)
-
-    return (
-      <div
-        className="group crystal-card animate-professional-fade-in relative"
-        style={{ animationDelay: `${index * 100}ms`, '--glow-color': theme.colors.glowColor }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div className={`absolute inset-0 rounded-xl bg-gradient-to-r ${performance.color} opacity-0 blur-xl transition-all duration-700 group-hover:opacity-10 -z-10`} />
-
-        {/* 🔗 Solo link al detalle */}
-        <Link href={`/matches/${match.id}`} className="block focus:outline-none">
-          <Card
-            className="relative overflow-hidden bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-500 hover:scale-[1.02] focus:ring-2 focus:ring-gray-500/20 focus:border-gray-400"
-            padding="none"
-          >
-            <div className={`h-1 bg-gradient-to-r ${performance.color}`} />
-
-            <div className="relative aspect-[4/3] overflow-hidden">
-              {bannerSrc ? (
-                <Image
-                  src={bannerSrc}
-                  alt={winnerPart?.commander_name ? `Comandante: ${winnerPart.commander_name}` : 'Comandante del ganador'}
-                  fill
-                  className="object-cover object-top transition-transform duration-700 group-hover:scale-110"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] transition-transform duration-1000 group-hover:translate-x-[100%]" />
-                  <div className="relative z-10 text-center">
-                    <svg className="h-8 w-8 mb-2 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <div>Sin imagen de comandante</div>
-                  </div>
-                </div>
-              )}
-
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
-
-              <div className="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-all duration-300 group-hover:bg-black/70">
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {formatDate(match.played_at)}
-                </span>
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:scale-105 ${performance.bg} ${performance.text} ring-2 ring-white/20`}>
-                  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
-                  </svg>
-                  {formatName}
-                </span>
-              </div>
-
-              <div className="absolute bottom-3 left-3 right-3 space-y-3">
-                {winnerPart?.commander_name && (
-                  <h3 className="line-clamp-2 text-lg font-bold leading-tight text-white drop-shadow-lg transition-all duration-300 group-hover:drop-shadow-2xl">
-                    {winnerPart.commander_name}
-                  </h3>
-                )}
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/95 backdrop-blur-sm px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-lg ring-1 ring-black/5 transition-all duration-300 group-hover:bg-white group-hover:scale-105">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
-                    <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  </div>
-                  <span className="text-gray-700">Ganador:</span>
-                  <span className="text-gray-900">{winnerNickname}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className={`text-sm font-bold ${theme.text.strong} uppercase tracking-wide`}>Jugadores</h4>
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${performance.bg} ${performance.text}`}>
-                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-                    </svg>
-                    {parts.length} • {performance.label}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {parts.map((p, pIndex) => {
-                    const isWinner = p.user_id === match.winner
-                    return (
-                      <span
-                        key={p.user_id}
-                        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-sm ${
-                          isWinner
-                            ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 ring-2 ring-amber-200 shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                        style={{ animationDelay: `${(index * 100) + (pIndex * 50)}ms` }}
-                      >
-                        {isWinner && (
-                          <svg className="h-3 w-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        )}
-                        {nickById[p.user_id] ?? p.user_id}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-100 px-6 py-4 bg-gray-50/50">
-              <div className={`flex items-center justify-center gap-2 rounded border-2 border-dashed transition-all duration-300 py-2.5 px-4 text-sm font-medium ${
-                isHovered ? 'border-gray-300 bg-white text-gray-700 shadow-sm' : 'border-gray-200 bg-transparent text-gray-500'
-              }`}>
-                <svg className={`h-4 w-4 transition-all duration-300 ${isHovered ? 'translate-x-0.5' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                <span>Ver Detalles</span>
-                <svg className={`h-4 w-4 transition-all duration-300 ${isHovered ? 'translate-x-0.5 scale-110' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
-          </Card>
-        </Link>
-      </div>
-    )
+  const getMatchPerformance = (playerCount) => {
+    if (playerCount >= 5) return { level:'epic', color:'from-purple-500 to-indigo-600', bg:'bg-purple-50', text:'text-purple-800', ring:'ring-purple-200', label:'Épica' }
+    if (playerCount === 4) return { level:'standard', color:'from-blue-500 to-blue-600', bg:'bg-blue-50', text:'text-blue-800', ring:'ring-blue-200', label:'Estándar' }
+    if (playerCount === 3) return { level:'small', color:'from-amber-500 to-orange-600', bg:'bg-amber-50', text:'text-amber-800', ring:'ring-amber-200', label:'Pequeña' }
+    return { level:'duo', color:'from-emerald-500 to-green-600', bg:'bg-emerald-50', text:'text-emerald-800', ring:'ring-emerald-200', label:'Duelo' }
   }
+
+  const performance = getMatchPerformance(parts.length)
+
+  const handleDelete = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!onDelete || !canDelete) return
+    
+    const confirmed = window.confirm('¿Estás seguro de que quieres eliminar esta partida?')
+    if (confirmed) {
+      const success = await onDelete(match.id)
+      if (success) {
+        window.location.reload()
+      } else {
+        alert('Error al eliminar la partida. Inténtalo de nuevo.')
+      }
+    }
+  }
+
+  return (
+    <div
+      className="group crystal-card animate-professional-fade-in relative"
+      style={{ animationDelay: `${index * 100}ms`, '--glow-color': theme.colors.glowColor }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className={`absolute inset-0 rounded-xl bg-gradient-to-r ${performance.color} opacity-0 blur-xl transition-all duration-700 group-hover:opacity-10 -z-10`} />
+
+      {/* Botón de eliminar para admins */}
+      {canDelete && (
+        <button
+          onClick={handleDelete}
+          className="absolute top-2 right-2 z-10 rounded-full bg-red-600 p-2 text-white shadow-lg opacity-0 transition-all duration-300 hover:bg-red-700 group-hover:opacity-100"
+          aria-label="Eliminar partida"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      )}
+
+      <Link href={`/matches/${match.id}`} className="block focus:outline-none">
+        <Card
+          className="relative overflow-hidden bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-500 hover:scale-[1.02] focus:ring-2 focus:ring-gray-500/20 focus:border-gray-400"
+          padding="none"
+        >
+          <div className={`h-1 bg-gradient-to-r ${performance.color}`} />
+
+          <div className="relative aspect-[4/3] overflow-hidden">
+            {bannerSrc ? (
+              <Image
+                src={bannerSrc}
+                alt={winnerPart?.commander_name ? `Comandante: ${winnerPart.commander_name}` : 'Comandante del ganador'}
+                fill
+                className="object-cover object-top transition-transform duration-700 group-hover:scale-110"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] transition-transform duration-1000 group-hover:translate-x-[100%]" />
+                <div className="relative z-10 text-center">
+                  <svg className="h-8 w-8 mb-2 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <div>Sin imagen de comandante</div>
+                </div>
+              </div>
+            )}
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
+
+            <div className="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-all duration-300 group-hover:bg-black/70">
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {formatDate(match.played_at)}
+              </span>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:scale-105 ${performance.bg} ${performance.text} ring-2 ring-white/20`}>
+                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
+                </svg>
+                {formatName}
+              </span>
+            </div>
+
+            <div className="absolute bottom-3 left-3 right-3 space-y-3">
+              {winnerPart?.commander_name && (
+                <h3 className="line-clamp-2 text-lg font-bold leading-tight text-white drop-shadow-lg transition-all duration-300 group-hover:drop-shadow-2xl">
+                  {winnerPart.commander_name}
+                </h3>
+              )}
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/95 backdrop-blur-sm px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-lg ring-1 ring-black/5 transition-all duration-300 group-hover:bg-white group-hover:scale-105">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-sm">
+                  <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                </div>
+                <span className="text-gray-700">Ganador:</span>
+                <span className="text-gray-900">{winnerNickname}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className={`text-sm font-bold ${theme.text.strong} uppercase tracking-wide`}>Jugadores</h4>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${performance.bg} ${performance.text}`}>
+                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                  </svg>
+                  {parts.length} • {performance.label}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {parts.map((p, pIndex) => {
+                  const isWinner = p.user_id === match.winner
+                  return (
+                    <span
+                      key={p.user_id}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-sm ${
+                        isWinner
+                          ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 ring-2 ring-amber-200 shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                      style={{ animationDelay: `${(index * 100) + (pIndex * 50)}ms` }}
+                    >
+                      {isWinner && (
+                        <svg className="h-3 w-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      )}
+                      {nickById[p.user_id] ?? p.user_id}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 px-6 py-4 bg-gray-50/50">
+            <div className={`flex items-center justify-center gap-2 rounded border-2 border-dashed transition-all duration-300 py-2.5 px-4 text-sm font-medium ${
+              isHovered ? 'border-gray-300 bg-white text-gray-700 shadow-sm' : 'border-gray-200 bg-transparent text-gray-500'
+            }`}>
+              <svg className={`h-4 w-4 transition-all duration-300 ${isHovered ? 'translate-x-0.5' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span>Ver Detalles</span>
+              <svg className={`h-4 w-4 transition-all duration-300 ${isHovered ? 'translate-x-0.5 scale-110' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </Card>
+      </Link>
+    </div>
+  )
+}
 
 function ProfessionalEmptyState({ theme }) {
   return (
@@ -909,8 +967,11 @@ export default function ProfessionalMatchesList({
   const [currentUser, setCurrentUser] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
 
+  // ✅ DEFINIR canDelete basado en isAdmin
+  const canDelete = isAdmin
+
   // UI
-  const [loading, setLoading] = useState(false) // Cambiado: no loading inicial si hay datos SSR
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   // Filtros
@@ -945,12 +1006,12 @@ export default function ProfessionalMatchesList({
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           setCurrentUser(user)
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', user.id)
-            .single()
-          if (profile?.is_admin) setIsAdmin(true)
+          // ✅ CORREGIDO: Verificar admin en user_metadata, no en tabla
+          const isUserAdmin = user.user_metadata?.is_admin === true || 
+                             user.app_metadata?.is_admin === true ||
+                             user.user_metadata?.role === 'admin' ||
+                             user.app_metadata?.role === 'admin'
+          if (isUserAdmin) setIsAdmin(true)
         }
         return
       }
@@ -962,12 +1023,12 @@ export default function ProfessionalMatchesList({
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setCurrentUser(user)
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single()
-        if (profile?.is_admin) setIsAdmin(true)
+        // ✅ CORREGIDO: Verificar admin en user_metadata, no en tabla
+        const isUserAdmin = user.user_metadata?.is_admin === true || 
+                           user.app_metadata?.is_admin === true ||
+                           user.user_metadata?.role === 'admin' ||
+                           user.app_metadata?.role === 'admin'
+        if (isUserAdmin) setIsAdmin(true)
       }
 
       // Cargar datos si no vienen del SSR
@@ -1210,6 +1271,7 @@ export default function ProfessionalMatchesList({
                     nickById={nickById}
                     theme={theme}
                     index={index}
+                    canDelete={canDelete}
                     onDelete={canDelete ? deleteMatch : null}
                   />
                 )
@@ -1219,7 +1281,6 @@ export default function ProfessionalMatchesList({
             {canLoadMore && (
               <div className="flex justify-center">
                 <button
-                  // MEJORA 3C: Botón "Cargar más" mejorado
                   onClick={async () => {
                     // si ya no hay más matches cargados para mostrar, trae más del backend
                     if (visibleCount + PAGE_SIZE > matches.length) {
