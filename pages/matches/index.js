@@ -967,9 +967,6 @@ export default function ProfessionalMatchesList({
   const [currentUser, setCurrentUser] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
 
-  // ✅ DEFINIR canDelete basado en isAdmin
-  const canDelete = isAdmin
-
   // UI
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -983,7 +980,7 @@ export default function ProfessionalMatchesList({
   const PAGE_SIZE = 12
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
-  // MEJORA 1: Función para cargar más matches del servidor
+  // Cargar más matches
   const loadMoreMatches = async () => {
     const from = matches.length
     const to = from + PAGE_SIZE - 1
@@ -999,18 +996,15 @@ export default function ProfessionalMatchesList({
   useEffect(() => {
     let ignore = false
     async function loadInitialData() {
-      // Solo cargar si no hay datos iniciales del SSR
       if (matches.length > 0) {
         setLoading(false)
-        // Cargar usuario actual
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           setCurrentUser(user)
-          // ✅ CORREGIDO: Verificar admin en user_metadata, no en tabla
           const isUserAdmin = user.user_metadata?.is_admin === true || 
-                             user.app_metadata?.is_admin === true ||
-                             user.user_metadata?.role === 'admin' ||
-                             user.app_metadata?.role === 'admin'
+                              user.app_metadata?.is_admin === true ||
+                              user.user_metadata?.role === 'admin' ||
+                              user.app_metadata?.role === 'admin'
           if (isUserAdmin) setIsAdmin(true)
         }
         return
@@ -1019,19 +1013,16 @@ export default function ProfessionalMatchesList({
       setLoading(true)
       setError(null)
 
-      // Obtener usuario actual
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setCurrentUser(user)
-        // ✅ CORREGIDO: Verificar admin en user_metadata, no en tabla
         const isUserAdmin = user.user_metadata?.is_admin === true || 
-                           user.app_metadata?.is_admin === true ||
-                           user.user_metadata?.role === 'admin' ||
-                           user.app_metadata?.role === 'admin'
+                            user.app_metadata?.is_admin === true ||
+                            user.user_metadata?.role === 'admin' ||
+                            user.app_metadata?.role === 'admin'
         if (isUserAdmin) setIsAdmin(true)
       }
 
-      // Cargar datos si no vienen del SSR
       const [
         { data: profData, error: profErr },
         { data: gameData, error: gameErr },
@@ -1071,7 +1062,6 @@ export default function ProfessionalMatchesList({
     return () => { ignore = true }
   }, [matches.length])
 
-  // ✅ ARREGLO 1: Mapas auxiliares ANTES de filteredMatches (evitar TDZ)
   const nickById = useMemo(() => {
     const acc = {}
     for (const p of profiles) acc[p.id] = p.nickname
@@ -1093,7 +1083,6 @@ export default function ProfessionalMatchesList({
     return acc
   }, [participants])
 
-  // ✅ ARREGLO 2: Filtro + búsqueda (ahora sí puede usar los mapas + dependencias correctas)
   const filteredMatches = useMemo(() => {
     const q = query.trim().toLowerCase()
     return matches.filter((m) => {
@@ -1118,7 +1107,6 @@ export default function ProfessionalMatchesList({
 
   const visible = filteredMatches.slice(0, visibleCount)
 
-  // MEJORA 2B: Cargar participantes solo de partidas visibles
   useEffect(() => {
     const ids = visible.map(m => m.id)
     if (!ids.length) return
@@ -1134,7 +1122,6 @@ export default function ProfessionalMatchesList({
         `)
         .in('match_id', ids)
       if (!cancelled && !error && data) {
-        // Fusiona con los que ya hay (por si cambió el "visible")
         const byId = new Map()
         for (const p of participants) {
           const key = `${p.match_id}:${p.user_id}`
@@ -1148,22 +1135,16 @@ export default function ProfessionalMatchesList({
       }
     })()
     return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleCount, filteredMatches])
 
-  // ✅ ARREGLO 3: Reset de paginación con limpieza opcional de participantes
   useEffect(() => { 
     setVisibleCount(PAGE_SIZE)
-    // ✅ Opcional: vaciar participants para forzar recarga limpia
     setParticipants([])
   }, [selectedFormat, selectedPlayer, query])
 
   if (loading) {
     return (
       <div className="min-h-screen theme-transition pb-24" style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}>
-        <div className="fixed top-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 space-y-12 sm:space-y-16">
           <ProfessionalHero theme={theme} />
           <ProfessionalFilters
@@ -1199,11 +1180,6 @@ export default function ProfessionalMatchesList({
           <div className="crystal-card">
             <Card className="border border-red-300 bg-red-50/90 backdrop-blur-sm shadow-lg">
               <div className="rounded-xl border-2 border-red-300 bg-red-100/50 p-8 text-center">
-                <div className="mx-auto w-16 h-16 rounded-full bg-red-200 flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.864-.833-2.634 0L4.17 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
                 <h3 className="text-2xl font-bold text-red-800 mb-2">Error al cargar las partidas</h3>
                 <p className="text-red-700 font-medium">{error}</p>
               </div>
@@ -1220,9 +1196,6 @@ export default function ProfessionalMatchesList({
 
   return (
     <div className="min-h-screen theme-transition pb-24" style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}>
-      <div className="fixed top-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-white/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 space-y-12 sm:space-y-16">
         <ProfessionalHero theme={theme} />
         <ProfessionalFilters
@@ -1271,8 +1244,6 @@ export default function ProfessionalMatchesList({
                     nickById={nickById}
                     theme={theme}
                     index={index}
-                    canDelete={canDelete}
-                    onDelete={canDelete ? deleteMatch : null}
                   />
                 )
               })}
@@ -1282,7 +1253,6 @@ export default function ProfessionalMatchesList({
               <div className="flex justify-center">
                 <button
                   onClick={async () => {
-                    // si ya no hay más matches cargados para mostrar, trae más del backend
                     if (visibleCount + PAGE_SIZE > matches.length) {
                       await loadMoreMatches()
                     }
@@ -1290,9 +1260,6 @@ export default function ProfessionalMatchesList({
                   }}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white/80 backdrop-blur-sm px-8 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-all duration-300 hover:border-gray-400 hover:bg-white hover:shadow-md hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-500/20"
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
                   Cargar más partidas
                 </button>
               </div>
@@ -1302,34 +1269,11 @@ export default function ProfessionalMatchesList({
 
         <ProfessionalFab theme={theme} />
         <ProfessionalMobileBar theme={theme} />
-
-        <footer className="py-12 text-center">
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-3">
-              <span className={`text-sm font-medium ${theme.text.soft}`}>Tema actual:</span>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full shadow-lg" style={{ background: `linear-gradient(45deg, ${theme.colors.primary})` }} />
-                <span className={`font-bold ${theme.text.strong}`}>{theme.label}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              {MTG_PROFESSIONAL_THEMES.map((t, i) => (
-                <div
-                  key={t.key}
-                  className={`h-2 rounded-full transition-all duration-500 ${t.key === theme.key ? 'w-8 opacity-100' : 'w-2 opacity-40'}`}
-                  style={{ background: `linear-gradient(45deg, ${t.colors.primary})` }}
-                />
-              ))}
-            </div>
-            <p className={`text-sm ${theme.text.soft} opacity-75`}>
-              El tema cambia automáticamente cada 40 segundos
-            </p>
-          </div>
-        </footer>
       </div>
     </div>
   )
 }
+
 
 /* ===============================================================
   SSR - DATOS DEL SERVIDOR (SIGUIENDO ESTRUCTURA DEL INDEX)
