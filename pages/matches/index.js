@@ -80,7 +80,7 @@ const MTG_PROFESSIONAL_THEMES = [
   },
   {
     key: 'mono-red',
-    label: 'Mountain',
+    label: 'Mountain', 
     icon: '🔴',
     colors: {
       primary: 'from-red-500 to-rose-600',
