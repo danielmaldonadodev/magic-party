@@ -7,9 +7,290 @@ import { es } from 'date-fns/locale'
 import { supabase } from '../../lib/supabaseClient'
 import PageHeader from '../../components/PageHeader'
 
-// ────────────────────────────────────────────────────────────
 /* ===============================================================
-  COMPONENTE DE CONFIRMACIÓN DE ELIMINACIÓN
+  FUNCIONES DE CALENDARIO AVANZADAS
+  =============================================================== */
+function generateEnhancedICS(event) {
+  const startDate = new Date(event.starts_at)
+  const endDate = new Date(event.ends_at || new Date(startDate.getTime() + 3 * 60 * 60 * 1000))
+  
+  const formatICSDate = (date) => {
+    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+  }
+  
+  const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//MTG Events//MTG Events App//ES
+BEGIN:VEVENT
+UID:mtg-event-${event.id}@mtgapp.com
+DTSTAMP:${formatICSDate(new Date())}
+DTSTART:${formatICSDate(startDate)}
+DTEND:${formatICSDate(endDate)}
+SUMMARY:${event.title}
+DESCRIPTION:${event.description || 'Evento de Magic: The Gathering'}\\n\\nOrganizado por: Colegueo MTG\\nUbicación: ${event.location || 'Por confirmar'}
+LOCATION:${event.location || ''}
+STATUS:CONFIRMED
+SEQUENCE:0
+BEGIN:VALARM
+TRIGGER:-PT1H
+DESCRIPTION:Recordatorio: ${event.title} en 1 hora
+ACTION:DISPLAY
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P1D
+DESCRIPTION:Recordatorio: ${event.title} mañana
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+END:VCALENDAR`
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `evento-mtg-${event.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+function generateCalendarLinks(event) {
+  const startDate = new Date(event.starts_at)
+  const endDate = new Date(event.ends_at || new Date(startDate.getTime() + 3 * 60 * 60 * 1000))
+  
+  const formatForGoogle = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+  
+  const description = `${event.description || 'Evento de Magic: The Gathering'}
+
+Organizado por: Colegueo MTG
+Ubicación: ${event.location || 'Por confirmar'}`
+
+  return {
+    google: `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${formatForGoogle(startDate)}/${formatForGoogle(endDate)}&details=${encodeURIComponent(description)}&location=${encodeURIComponent(event.location || '')}`,
+    
+    outlook: `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(event.title)}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}&body=${encodeURIComponent(description)}&location=${encodeURIComponent(event.location || '')}`,
+    
+    yahoo: `https://calendar.yahoo.com/?v=60&view=d&type=20&title=${encodeURIComponent(event.title)}&st=${formatForGoogle(startDate)}&et=${formatForGoogle(endDate)}&desc=${encodeURIComponent(description)}&in_loc=${encodeURIComponent(event.location || '')}`
+  }
+}
+
+function scheduleEventReminder(event) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const eventDate = new Date(event.starts_at)
+    const now = new Date()
+    
+    // Notificación 1 día antes
+    const oneDayBefore = new Date(eventDate.getTime() - 24 * 60 * 60 * 1000)
+    if (oneDayBefore > now) {
+      setTimeout(() => {
+        new Notification(`🎲 Evento MTG mañana`, {
+          body: `${event.title} - ${event.location || 'Ubicación por confirmar'}`,
+          icon: '/mtg-icon.png',
+          tag: `event-reminder-${event.id}`,
+          requireInteraction: true
+        })
+      }, oneDayBefore.getTime() - now.getTime())
+    }
+    
+    // Notificación 1 hora antes
+    const oneHourBefore = new Date(eventDate.getTime() - 60 * 60 * 1000)
+    if (oneHourBefore > now) {
+      setTimeout(() => {
+        new Notification(`🔥 Evento MTG en 1 hora`, {
+          body: `${event.title} está por comenzar`,
+          icon: '/mtg-icon.png',
+          tag: `event-starting-${event.id}`,
+          requireInteraction: true
+        })
+      }, oneHourBefore.getTime() - now.getTime())
+    }
+  }
+}
+
+/* ===============================================================
+  MODAL DE CALENDARIO PREMIUM
+  =============================================================== */
+function CalendarModal({ isOpen, onClose, event, autoTriggered = false }) {
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
+  
+  const handleAddToCalendar = (type) => {
+    const links = generateCalendarLinks(event)
+    
+    switch(type) {
+      case 'download':
+        generateEnhancedICS(event)
+        break
+      case 'google':
+        window.open(links.google, '_blank')
+        break
+      case 'outlook':
+        window.open(links.outlook, '_blank')
+        break
+      case 'yahoo':
+        window.open(links.yahoo, '_blank')
+        break
+    }
+    
+    onClose()
+  }
+
+  const handleNotifications = async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission()
+      if (permission === 'granted') {
+        setNotificationsEnabled(true)
+        scheduleEventReminder(event)
+      }
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-full items-end justify-center p-3 sm:p-4 text-center sm:items-center">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          onClick={onClose}
+        />
+        
+        {/* Modal */}
+        <div className="relative transform overflow-hidden rounded-xl sm:rounded-lg bg-white text-left shadow-xl transition-all w-full max-w-sm sm:max-w-lg">
+          {/* Header */}
+          <div className={`${autoTriggered ? 'bg-gradient-to-r from-green-600 to-emerald-700' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} px-4 py-4 sm:px-6`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
+                  {autoTriggered ? (
+                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    {autoTriggered ? '🎉 ¡Te has apuntado!' : '📅 Añadir a calendario'}
+                  </h3>
+                  <p className="text-sm text-white/80">
+                    {autoTriggered ? '¿Quieres añadirlo a tu calendario?' : 'Elige tu calendario preferido'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="rounded-lg p-1.5 text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="bg-white px-4 pb-4 pt-5 sm:p-6">
+            <div className="space-y-5">
+              {/* Event info */}
+              <div className="rounded-lg bg-gray-50 p-3 sm:p-4">
+                <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base line-clamp-2">{event.title}</h4>
+                <div className="text-xs sm:text-sm text-gray-600 space-y-1">
+                  <p>📅 {format(new Date(event.starts_at), "d 'de' MMMM 'a las' HH:mm", { locale: es })}</p>
+                  <p>📍 {event.location || 'Ubicación por confirmar'}</p>
+                </div>
+              </div>
+
+              {/* Calendar options */}
+              <div>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <button
+                    onClick={() => handleAddToCalendar('google')}
+                    className="flex flex-col items-center gap-1.5 sm:gap-2 rounded-lg border border-gray-300 px-3 py-3 sm:px-4 text-xs sm:text-sm hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                  >
+                    <span className="text-lg sm:text-base text-blue-600">📅</span>
+                    <span className="font-medium">Google</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleAddToCalendar('outlook')}
+                    className="flex flex-col items-center gap-1.5 sm:gap-2 rounded-lg border border-gray-300 px-3 py-3 sm:px-4 text-xs sm:text-sm hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                  >
+                    <span className="text-lg sm:text-base text-blue-800">📧</span>
+                    <span className="font-medium">Outlook</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleAddToCalendar('yahoo')}
+                    className="flex flex-col items-center gap-1.5 sm:gap-2 rounded-lg border border-gray-300 px-3 py-3 sm:px-4 text-xs sm:text-sm hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                  >
+                    <span className="text-lg sm:text-base text-purple-600">🟣</span>
+                    <span className="font-medium">Yahoo</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => handleAddToCalendar('download')}
+                    className="flex flex-col items-center gap-1.5 sm:gap-2 rounded-lg border border-gray-300 px-3 py-3 sm:px-4 text-xs sm:text-sm hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                  >
+                    <span className="text-lg sm:text-base text-gray-600">💾</span>
+                    <span className="font-medium">Descargar</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Notifications */}
+              <div className="pt-3 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-gray-900">Recordatorios</span>
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    notificationsEnabled 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {notificationsEnabled ? '✅ Activos' : '❌ Off'}
+                  </span>
+                </div>
+                
+                {!notificationsEnabled ? (
+                  <button
+                    onClick={handleNotifications}
+                    className="w-full rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5 text-xs sm:text-sm text-amber-800 hover:bg-amber-100 transition-colors"
+                  >
+                    🔔 Activar notificaciones web
+                  </button>
+                ) : (
+                  <p className="text-xs sm:text-sm text-green-700 bg-green-50 rounded-lg p-2.5">
+                    ✅ Te avisaremos 1 día y 1 hora antes
+                  </p>
+                )}
+                
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Los recordatorios se incluyen en el archivo .ics
+                </p>
+              </div>
+
+              {/* Actions para modal automático */}
+              {autoTriggered && (
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={onClose}
+                    className="flex-1 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+                  >
+                    Ahora no
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ===============================================================
+  MODAL DE CONFIRMACIÓN DE ELIMINACIÓN
   =============================================================== */
 function DeleteEventModal({ isOpen, onClose, onConfirm, event, participantCount = 0 }) {
   const [confirmText, setConfirmText] = useState('')
@@ -130,7 +411,7 @@ function DeleteEventModal({ isOpen, onClose, onConfirm, event, participantCount 
 /* ===============================================================
   BOTÓN DE ELIMINACIÓN MEJORADO
   =============================================================== */
-export function ImprovedDeleteButton({ event, participantCount = 0, onDelete, className = "" }) {
+function ImprovedDeleteButton({ event, participantCount = 0, onDelete, className = "" }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const handleConfirmDelete = async () => {
@@ -167,7 +448,9 @@ export function ImprovedDeleteButton({ event, participantCount = 0, onDelete, cl
   )
 }
 
-// Utilidades de fecha/estado
+/* ===============================================================
+  UTILIDADES
+  =============================================================== */
 function formatEventDate(date) {
   try {
     const d = new Date(date)
@@ -203,21 +486,61 @@ function getEventStatus(startsAt, endsAt) {
   const end = new Date(endsAt)
 
   if (isAfter(now, end)) {
-    return { key: 'past', label: 'Finalizado', color: 'from-gray-500 to-gray-600', bg: 'bg-gray-50', text: 'text-gray-700', ring: 'ring-gray-200', bgCard: 'bg-gray-100' }
+    return { 
+      key: 'past', 
+      label: 'Finalizado', 
+      color: 'from-gray-500 to-gray-600', 
+      bg: 'bg-gray-50', 
+      text: 'text-gray-700', 
+      ring: 'ring-gray-200', 
+      bgCard: 'bg-gray-100',
+      statusBadge: 'bg-gray-100 text-gray-700',
+      icon: '✅'
+    }
   }
 
   if (isAfter(now, start) && isBefore(now, end)) {
-    return { key: 'active', label: 'En curso', color: 'from-green-500 to-emerald-600', bg: 'bg-green-50', text: 'text-green-800', ring: 'ring-green-200', bgCard: 'bg-green-100' }
+    return { 
+      key: 'active', 
+      label: 'En curso', 
+      color: 'from-green-500 to-emerald-600', 
+      bg: 'bg-green-50', 
+      text: 'text-green-800', 
+      ring: 'ring-green-200', 
+      bgCard: 'bg-green-100',
+      statusBadge: 'bg-green-100 text-green-800',
+      icon: '🔴'
+    }
   }
 
   // Próximo evento (menos de 2 horas)
   const twoHoursFromNow = new Date(now)
   twoHoursFromNow.setHours(twoHoursFromNow.getHours() + 2)
   if (isBefore(start, twoHoursFromNow)) {
-    return { key: 'soon', label: 'Próximamente', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', text: 'text-amber-800', ring: 'ring-amber-200', bgCard: 'bg-amber-100' }
+    return { 
+      key: 'soon', 
+      label: 'Próximamente', 
+      color: 'from-amber-500 to-orange-600', 
+      bg: 'bg-amber-50', 
+      text: 'text-amber-800', 
+      ring: 'ring-amber-200', 
+      bgCard: 'bg-amber-100',
+      statusBadge: 'bg-amber-100 text-amber-800',
+      icon: '⏰'
+    }
   }
 
-  return { key: 'scheduled', label: 'Programado', color: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', text: 'text-blue-800', ring: 'ring-blue-200', bgCard: 'bg-blue-100' }
+  return { 
+    key: 'scheduled', 
+    label: 'Programado', 
+    color: 'from-blue-500 to-indigo-600', 
+    bg: 'bg-blue-50', 
+    text: 'text-blue-800', 
+    ring: 'ring-blue-200', 
+    bgCard: 'bg-blue-100',
+    statusBadge: 'bg-blue-100 text-blue-800',
+    icon: '📅'
+  }
 }
 
 function getLocationIcon(location) {
@@ -229,41 +552,9 @@ function getLocationIcon(location) {
   return '🏠'
 }
 
-function getEventTypeIcon(status) {
-  switch (status.key) {
-    case 'active': return '🔴'
-    case 'soon': return '⏰'
-    case 'past': return '✅'
-    default: return '📅'
-  }
-}
-
-// Sencillo generador de enlace ICS (Añadir al calendario)
-function buildIcs(event) {
-  try {
-    const dt = (d) => new Date(d).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-    const body = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Colegueo MTG//Eventos//ES',
-      'BEGIN:VEVENT',
-      `UID:${event.id}@colegueo`,
-      `DTSTAMP:${dt(Date.now())}`,
-      `DTSTART:${dt(event.starts_at)}`,
-      `DTEND:${dt(event.ends_at)}`,
-      `SUMMARY:${(event.title || '').replace(/\n/g, ' ')}`,
-      `DESCRIPTION:${(event.description || '').replace(/\n/g, ' ')}`,
-      `LOCATION:${(event.location || '').replace(/\n/g, ' ')}`,
-      'END:VEVENT',
-      'END:VCALENDAR'
-    ].join('\r\n')
-    return 'data:text/calendar;charset=utf8,' + encodeURIComponent(body)
-  } catch {
-    return '#'
-  }
-}
-
-// ────────────────────────────────────────────────────────────
+/* ===============================================================
+  COMPONENTE PRINCIPAL
+  =============================================================== */
 export default function EventDetail() {
   const router = useRouter()
   const { id } = router.query
@@ -280,10 +571,14 @@ export default function EventDetail() {
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
 
+  // Estados para modales
+  const [showAutoCalendarModal, setShowAutoCalendarModal] = useState(false)
+  const [showCalendarModal, setShowCalendarModal] = useState(false)
+
   const isOwner = !!(event && sessionUserId && event.created_by === sessionUserId)
   const status = event ? getEventStatus(event.starts_at, event.ends_at) : null
 
-  // Sesión actual
+  // Cargar sesión actual
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -291,7 +586,7 @@ export default function EventDetail() {
     })()
   }, [])
 
-  // Carga del evento + colecciones
+  // Cargar evento y datos relacionados
   useEffect(() => {
     if (!id) return
     let ignore = false
@@ -321,7 +616,7 @@ export default function EventDetail() {
     return () => { ignore = true }
   }, [id])
 
-  // Participación del usuario actual
+  // Encontrar participación del usuario actual
   useEffect(() => {
     if (!sessionUserId || !participants.length) {
       setUserParticipation(null)
@@ -335,9 +630,11 @@ export default function EventDetail() {
   const nickById = useMemo(() => {
     const acc = {}; for (const p of profiles) acc[p.id] = p.nickname || 'Jugador'; return acc
   }, [profiles])
+  
   const avatarById = useMemo(() => {
     const acc = {}; for (const p of profiles) acc[p.id] = p.avatar_url || null; return acc
   }, [profiles])
+  
   const gameById = useMemo(() => {
     const acc = {}; for (const g of games) acc[g.id] = g.name; return acc
   }, [games])
@@ -356,13 +653,15 @@ export default function EventDetail() {
     [participants]
   )
 
-  // Acciones de participación
+  // Manejar participación con modal automático
   const handleJoinEvent = async (desired = 'going') => {
     if (!sessionUserId || !event) return
     setActionLoading(true)
 
     const isFull = !!(event.capacity && confirmedParticipants.length >= event.capacity)
     const newStatus = desired === 'going' && isFull ? 'waitlist' : desired
+    const wasNotParticipating = !userParticipation
+    const previousStatus = userParticipation?.status
 
     try {
       if (userParticipation) {
@@ -386,6 +685,14 @@ export default function EventDetail() {
 
         setParticipants(prev => [...prev, { event_id: event.id, user_id: sessionUserId, status: newStatus, created_at: new Date().toISOString() }])
       }
+
+      // Mostrar modal de calendario si se confirma participación
+      if (newStatus === 'going' && (wasNotParticipating || previousStatus !== 'going')) {
+        setTimeout(() => {
+          setShowAutoCalendarModal(true)
+        }, 500)
+      }
+
     } catch (err) {
       console.error('Error updating participation:', err)
       alert('Error al actualizar participación')
@@ -414,12 +721,12 @@ export default function EventDetail() {
     }
   }
 
-const handleCreateMatch = () => {
+  const handleCreateMatch = () => {
     if (!event) return
     router.push(`/matches/new?fromEvent=${event.id}`)
   }
 
-  // NUEVA FUNCIÓN: Manejar eliminación del evento
+  // Manejar eliminación del evento
   const handleDeleteEvent = async (eventId) => {
     try {
       // Primero eliminar participantes
@@ -442,15 +749,21 @@ const handleCreateMatch = () => {
       router.push('/events')
     } catch (err) {
       setError(err.message || 'Error al eliminar el evento')
-      throw err // Re-throw para que el modal lo maneje
+      throw err
     }
   }
 
-  // Render: estados básicos
+  // Datos calculados para la nueva UI
+  const organizer = profiles.find(p => p.id === event?.created_by)
+  const confirmedCount = confirmedParticipants.length
+  const maybeCount = maybeParticipants.length
+  const totalInterested = confirmedCount + maybeCount
+
+  // Estados de carga y error
   if (loading) {
     return (
       <section className="py-8 pb-24 px-4 bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center py-20">
             <div className="flex items-center gap-3 text-gray-500">
               <svg className="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -468,7 +781,7 @@ const handleCreateMatch = () => {
   if (error) {
     return (
       <section className="py-8 pb-24 px-4 bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden">
             <div className="p-8 text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
@@ -494,7 +807,7 @@ const handleCreateMatch = () => {
   if (!event) {
     return (
       <section className="py-8 pb-24 px-4 bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-8 text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
@@ -520,348 +833,568 @@ const handleCreateMatch = () => {
   const canJoin = sessionUserId && status && status.key !== 'past'
   const isFull = !!(event.capacity && confirmedParticipants.length >= event.capacity)
   const locationIcon = getLocationIcon(event.location)
-  const typeIcon = getEventTypeIcon(status)
-  const icsHref = buildIcs(event)
 
   return (
-    <section className="py-8 pb-24 px-4 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        {/* Navigation and Actions */}
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+        {/* Navegación superior */}
         <div className="flex items-center justify-between mb-6">
-          <Link href="/events" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-200">
+          <Link
+            href="/events"
+            className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Volver a eventos
           </Link>
 
-          <div className="flex gap-3">
-            {/* Crear partida desde evento */}
-            {confirmedParticipants.length >= 2 && (status.key === 'active' || status.key === 'past') && (
-              <button
-                onClick={handleCreateMatch}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Crear Partida
-              </button>
-            )}
-
-            {/* Añadir a calendario */}
-            <a
-              href={icsHref}
-              download={`evento-${event.id}.ics`}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          {isOwner && (
+            <Link
+              href={`/events/edit/${event.id}`}
+              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              Añadir a calendario
-            </a>
+              Editar evento
+            </Link>
+          )}
+        </div>
 
-            {/* Acciones del usuario */}
-            {canJoin && (
-              <div className="flex gap-2">
-                {!userParticipation ? (
-                  <>
+        <div className="space-y-6">
+          {/* Header principal del evento */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Encabezado con título y acciones */}
+            <div className="px-4 py-6 sm:px-6 border-b border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${status.statusBadge}`}>
+                      <span>{status.icon}</span>
+                      {status.label}
+                    </span>
+                    {event.visibility === 'private' && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 text-gray-700 px-2 py-1 text-xs font-semibold">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Privado
+                      </span>
+                    )}
+                  </div>
+                  
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">{event.title}</h1>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-medium">{formatEventDate(event.starts_at)}</span>
+                    </div>
+                    
+                    {event.location && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <span className="text-sm">{locationIcon}</span>
+                        <span className="text-sm font-medium">{event.location}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => setShowCalendarModal(true)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="hidden sm:inline">📅 Añadir a calendario</span>
+                    <span className="sm:hidden">📅 Calendario</span>
+                  </button>
+
+                  {/* Crear partida desde evento */}
+                  {confirmedParticipants.length >= 2 && (status.key === 'active' || status.key === 'past') && (
                     <button
-                      onClick={() => handleJoinEvent('going')}
-                      disabled={actionLoading}
-                      className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={handleCreateMatch}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
-                      {isFull ? 'Lista de espera' : 'Apuntarse'}
+                      Crear Partida
                     </button>
-                    <button
-                      onClick={() => handleJoinEvent('maybe')}
-                      disabled={actionLoading}
-                      className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  )}
+
+                  {isOwner && (
+                    <Link
+                      href={`/events/manage/${event.id}`}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      Tal vez
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {userParticipation.status !== 'going' && (
+                      <span className="hidden sm:inline">Gestionar evento</span>
+                      <span className="sm:hidden">Gestionar</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Contenido del evento */}
+            <div className="px-4 py-6 sm:px-6 space-y-6">
+              {/* Descripción */}
+              {event.description && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    📝 <span>Descripción</span>
+                  </h3>
+                  <div className="prose prose-sm max-w-none text-gray-700">
+                    {event.description.split('\n').map((line, i) => (
+                      <p key={i} className="mb-2">{line || '\u00A0'}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Información del organizador */}
+              {organizer && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    👤 <span>Organizador</span>
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+                      {organizer.avatar_url ? (
+                        <Image
+                          src={organizer.avatar_url}
+                          alt={organizer.nickname || 'Usuario'}
+                          width={40}
+                          height={40}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        organizer.nickname?.charAt(0)?.toUpperCase() || '?'
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{organizer.nickname || 'Usuario'}</p>
+                      <p className="text-sm text-gray-500">Creador del evento</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Estadísticas de participación */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  📊 <span>Participación</span>
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-green-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-600">{confirmedCount}</div>
+                    <div className="text-sm text-green-700">Confirmados</div>
+                  </div>
+                  <div className="bg-amber-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-amber-600">{maybeCount}</div>
+                    <div className="text-sm text-amber-700">Tal vez</div>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-600">{totalInterested}</div>
+                    <div className="text-sm text-blue-700">Total interesados</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sección de participación del usuario */}
+          {canJoin && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                🎯 <span>Tu participación</span>
+              </h3>
+              
+              <div className="space-y-4">
+                {/* Estado actual */}
+                {userParticipation && (
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className={`w-3 h-3 rounded-full ${
+                      userParticipation.status === 'going' ? 'bg-green-500' :
+                      userParticipation.status === 'maybe' ? 'bg-amber-500' : 
+                      userParticipation.status === 'waitlist' ? 'bg-blue-500' : 'bg-red-500'
+                    }`}></div>
+                    <span className="text-sm font-medium text-gray-700">
+                      Estado actual: <span className="capitalize">{
+                        userParticipation.status === 'going' ? 'Confirmado' :
+                        userParticipation.status === 'maybe' ? 'Tal vez' : 
+                        userParticipation.status === 'waitlist' ? 'Lista de espera' : 'No asistirá'
+                      }</span>
+                    </span>
+                  </div>
+                )}
+
+                {/* Botones de participación */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {!userParticipation ? (
+                    <>
                       <button
                         onClick={() => handleJoinEvent('going')}
                         disabled={actionLoading}
-                        className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Confirmar
+                        {actionLoading ? (
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                        {isFull ? 'Lista de espera' : 'Apuntarse'}
                       </button>
-                    )}
-
-                    {userParticipation.status !== 'maybe' && (
                       <button
                         onClick={() => handleJoinEvent('maybe')}
                         disabled={actionLoading}
-                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         Tal vez
                       </button>
-                    )}
-
-                    <button
-                      onClick={handleLeaveEvent}
-                      disabled={actionLoading}
-                      className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Cancelar
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <PageHeader 
-          title="Detalle del Evento" 
-          description={`${formatEventDate(event.starts_at)} · ${gameById[event.game_id] || 'Sin formato específico'}`} 
-        />
-
-        {/* HERO - Event Info */}
-        <section className="mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className={`h-1 bg-gradient-to-r ${status.color}`} />
-
-            <div className="p-8">
-              <div className="grid lg:grid-cols-[1fr_320px] gap-8">
-                <div>
-                  {/* Header with status */}
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="text-4xl">{typeIcon}</div>
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <h1 className="text-3xl font-bold text-gray-900 break-words">{event.title}</h1>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold ${status.bg} ${status.text} ring-2 ring-white/20`}>
-                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${status.color}`} />
-                          {status.label}
-                        </span>
-                        {event.visibility === 'private' && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 text-gray-700 px-2 py-1 text-xs font-semibold">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            Privado
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
-                        <span>Organizado por {nickById[event.created_by] || 'Organizador desconocido'}</span>
-                        <span>•</span>
-                        <span className="inline-flex items-center gap-1">
-                          <span className="text-base">{getLocationIcon(event.location)}</span>
-                          <span>{event.location || 'Sin ubicación'}</span>
-                        </span>
-                      </div>
-
-                      {event.description && (
-                        <p className="text-gray-700 leading-relaxed mb-6 whitespace-pre-line">{event.description}</p>
+                    </>
+                  ) : (
+                    <>
+                      {userParticipation.status !== 'going' && (
+                        <button
+                          onClick={() => handleJoinEvent('going')}
+                          disabled={actionLoading}
+                          className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          {isFull ? 'Lista de espera' : 'Confirmar'}
+                        </button>
                       )}
+
+                      {userParticipation.status !== 'maybe' && (
+                        <button
+                          onClick={() => handleJoinEvent('maybe')}
+                          disabled={actionLoading}
+                          className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Tal vez
+                        </button>
+                      )}
+
+                      <button
+                        onClick={handleLeaveEvent}
+                        disabled={actionLoading}
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-3 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Cancelar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Lista de participantes detallada */}
+          {participants.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                👥 <span>Participantes ({participants.length})</span>
+              </h3>
+              
+              <div className="space-y-6">
+                {/* Confirmados */}
+                {confirmedParticipants.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-green-700 mb-3">✅ Confirmados ({confirmedParticipants.length})</h4>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {confirmedParticipants.map(participant => (
+                        <div key={participant.user_id} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-semibold text-sm overflow-hidden">
+                            {avatarById[participant.user_id] ? (
+                              <Image
+                                src={avatarById[participant.user_id]}
+                                alt={nickById[participant.user_id]}
+                                width={32}
+                                height={32}
+                                className="rounded-full"
+                              />
+                            ) : (
+                              nickById[participant.user_id]?.charAt(0)?.toUpperCase() || '?'
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {nickById[participant.user_id]}
+                            </p>
+                            <p className="text-xs text-green-700">
+                              Se unió {format(new Date(participant.created_at), "d MMM", { locale: es })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                )}
 
-                  {/* Event details grid */}
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
+                {/* Tal vez */}
+                {maybeParticipants.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-amber-700 mb-3">🤔 Tal vez ({maybeParticipants.length})</h4>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {maybeParticipants.map(participant => (
+                        <div key={participant.user_id} className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-semibold text-sm overflow-hidden">
+                            {avatarById[participant.user_id] ? (
+                              <Image
+                                src={avatarById[participant.user_id]}
+                                alt={nickById[participant.user_id]}
+                                width={32}
+                                height={32}
+                                className="rounded-full"
+                              />
+                            ) : (
+                              nickById[participant.user_id]?.charAt(0)?.toUpperCase() || '?'
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {nickById[participant.user_id]}
+                            </p>
+                            <p className="text-xs text-amber-700">
+                              Se unió {format(new Date(participant.created_at), "d MMM", { locale: es })}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">Comienza</div>
-                          <div className="text-sm text-gray-600">{formatEventDate(event.starts_at)}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">Termina</div>
-                          <div className="text-sm text-gray-600">{formatEventDate(event.ends_at)}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                          <span className="text-sm">{locationIcon}</span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">Ubicación</div>
-                          <div className="text-sm text-gray-600">{event.location || '—'}</div>
-                        </div>
-                      </div>
+                      ))}
                     </div>
+                  </div>
+                )}
 
-                    <div className="space-y-4">
-                      {event.game_id && (
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
+                {/* Lista de espera */}
+                {waitlistParticipants.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-700 mb-3">⏳ Lista de espera ({waitlistParticipants.length})</h4>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {waitlistParticipants.map(participant => (
+                        <div key={participant.user_id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm overflow-hidden">
+                            {avatarById[participant.user_id] ? (
+                              <Image
+                                src={avatarById[participant.user_id]}
+                                alt={nickById[participant.user_id]}
+                                width={32}
+                                height={32}
+                                className="rounded-full"
+                              />
+                            ) : (
+                              nickById[participant.user_id]?.charAt(0)?.toUpperCase() || '?'
+                            )}
                           </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">Formato</div>
-                            <div className="text-sm text-gray-600">{gameById[event.game_id]}</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {nickById[participant.user_id]}
+                            </p>
+                            <p className="text-xs text-blue-700">
+                              En espera desde {format(new Date(participant.created_at), "d MMM", { locale: es })}
+                            </p>
                           </div>
                         </div>
-                      )}
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.001 3.001 0 005.288 0" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">Capacidad</div>
-                          <div className="text-sm text-gray-600">
-                            {event.capacity ? `${confirmedParticipants.length}/${event.capacity} confirmados` : `${confirmedParticipants.length} confirmados`}
-                            {isFull && <span className="ml-2 inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800">Lleno</span>}
-                          </div>
-                        </div>
-                      </div>
+                      ))}
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {participants.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 text-4xl mb-2">👥</div>
+                  <p className="text-gray-500 text-sm">Sé el primero en apuntarte a este evento</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Panel de administración para el propietario */}
+          {isOwner && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                ⚙️ <span>Administración del evento</span>
+              </h3>
+              
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Link 
+                  href={`/events/edit/${event.id}`} 
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-3 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Editar evento
+                </Link>
+                
+                <Link 
+                  href={`/events/manage/${event.id}`}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.001 3.001 0 005.288 0" />
+                  </svg>
+                  Gestionar asistentes
+                </Link>
+
+                <ImprovedDeleteButton
+                  event={event}
+                  participantCount={participants.length}
+                  onDelete={handleDeleteEvent}
+                  className="sm:col-span-2 lg:col-span-1 justify-center"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Información adicional del evento */}
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* Detalles del evento */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                ℹ️ <span>Detalles</span>
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">Comienza</div>
+                    <div className="text-sm text-gray-600">{formatEventDate(event.starts_at)}</div>
                   </div>
                 </div>
 
-                {/* Aside: Participantes */}
-                <aside className="space-y-4">
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold text-gray-900">Participantes</h3>
-                      {event.capacity && (
-                        <span className="text-xs text-gray-500">{confirmedParticipants.length}/{event.capacity}</span>
-                      )}
-                    </div>
-
-                    <ul className="space-y-2">
-                      {confirmedParticipants.map(p => (
-                        <li key={`going-${p.user_id}`} className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
-                            {avatarById[p.user_id] ? (
-                              <Image src={avatarById[p.user_id]} alt="avatar" width={32} height={32} className="w-8 h-8 object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 flex items-center justify-center text-xs text-gray-500">{(nickById[p.user_id] || '?').slice(0,1)}</div>
-                            )}
-                          </div>
-                          <span className="text-sm text-gray-800">{nickById[p.user_id] || p.user_id}</span>
-                          <span className="ml-auto text-xs font-medium text-green-700 bg-green-50 rounded px-2 py-0.5">Confirmado</span>
-                        </li>
-                      ))}
-
-                      {maybeParticipants.map(p => (
-                        <li key={`maybe-${p.user_id}`} className="flex items-center gap-3 opacity-90">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
-                            {avatarById[p.user_id] ? (
-                              <Image src={avatarById[p.user_id]} alt="avatar" width={32} height={32} className="w-8 h-8 object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 flex items-center justify-center text-xs text-gray-500">{(nickById[p.user_id] || '?').slice(0,1)}</div>
-                            )}
-                          </div>
-                          <span className="text-sm text-gray-800">{nickById[p.user_id] || p.user_id}</span>
-                          <span className="ml-auto text-xs font-medium text-gray-700 bg-gray-100 rounded px-2 py-0.5">Tal vez</span>
-                        </li>
-                      ))}
-
-                      {waitlistParticipants.map(p => (
-                        <li key={`wait-${p.user_id}`} className="flex items-center gap-3 opacity-90">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
-                            {avatarById[p.user_id] ? (
-                              <Image src={avatarById[p.user_id]} alt="avatar" width={32} height={32} className="w-8 h-8 object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 flex items-center justify-center text-xs text-gray-500">{(nickById[p.user_id] || '?').slice(0,1)}</div>
-                            )}
-                          </div>
-                          <span className="text-sm text-gray-800">{nickById[p.user_id] || p.user_id}</span>
-                          <span className="ml-auto text-xs font-medium text-amber-700 bg-amber-50 rounded px-2 py-0.5">Lista de espera</span>
-                        </li>
-                      ))}
-
-                      {!participants.length && (
-                        <li className="text-sm text-gray-500">Sé el primero en apuntarte</li>
-                      )}
-                    </ul>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">Termina</div>
+                    <div className="text-sm text-gray-600">{formatEventDate(event.ends_at)}</div>
+                  </div>
+                </div>
 
-                  {isOwner && (
-                    <div className="rounded-lg border border-gray-200 p-4">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-2">Acciones de organizador</h3>
-                      <div className="flex flex-col gap-2">
-                        <Link 
-                          href={`/events/edit/${event.id}`} 
-                          className="inline-flex items-center justify-center rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                        >
-                          Editar evento
-                        </Link>
-                        
-                        <Link 
-                          href={`/events/manage/${event.id}`}
-                          className="inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                        >
-                          Gestionar asistentes
-                        </Link>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <span className="text-sm">{locationIcon}</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">Ubicación</div>
+                    <div className="text-sm text-gray-600">{event.location || '—'}</div>
+                  </div>
+                </div>
 
-                        {/* NUEVO: Botón de eliminar evento */}
-                        <ImprovedDeleteButton
-                          event={event}
-                          participantCount={participants.length}
-                          onDelete={handleDeleteEvent}
-                          className="w-full justify-center"
-                        />
-                      </div>
+                {event.game_id && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
                     </div>
-                  )}
-                </aside>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Formato</div>
+                      <div className="text-sm text-gray-600">{gameById[event.game_id]}</div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.001 3.001 0 005.288 0" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">Capacidad</div>
+                    <div className="text-sm text-gray-600">
+                      {event.capacity ? `${confirmedParticipants.length}/${event.capacity} confirmados` : `${confirmedParticipants.length} confirmados`}
+                      {isFull && <span className="ml-2 inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800">Lleno</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Información adicional */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                📋 <span>Información adicional</span>
+              </h3>
+              
+              <div className="space-y-4">
+                {event.rules && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Reglas</h4>
+                    <p className="text-sm text-gray-700 whitespace-pre-line">{event.rules}</p>
+                  </div>
+                )}
+                
+                {event.prizes && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Premios</h4>
+                    <p className="text-sm text-gray-700 whitespace-pre-line">{event.prizes}</p>
+                  </div>
+                )}
+
+                {!event.rules && !event.prizes && (
+                  <div className="text-center py-4">
+                    <div className="text-gray-400 text-2xl mb-2">📋</div>
+                    <p className="text-gray-500 text-sm">No hay información adicional disponible</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* Sección secundaria: Notas / Reglas / Info extra si en el futuro añades campos */}
-        {event.rules || event.prizes ? (
-          <section className="grid md:grid-cols-2 gap-6">
-            {event.rules && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">Reglas</h3>
-                <p className="text-sm text-gray-700 whitespace-pre-line">{event.rules}</p>
-              </div>
-            )}
-            {event.prizes && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">Premios</h3>
-                <p className="text-sm text-gray-700 whitespace-pre-line">{event.prizes}</p>
-              </div>
-            )}
-          </section>
-        ) : null}
+        {/* Modales */}
+        <CalendarModal
+          isOpen={showAutoCalendarModal}
+          onClose={() => setShowAutoCalendarModal(false)}
+          event={event}
+          autoTriggered={true}
+        />
+        
+        <CalendarModal
+          isOpen={showCalendarModal}
+          onClose={() => setShowCalendarModal(false)}
+          event={event}
+          autoTriggered={false}
+        />
       </div>
-    </section>
+    </div>
   )
 }
