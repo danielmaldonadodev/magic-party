@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { supabase } from '../../lib/supabaseClient'
 import PageHeader from '../../components/PageHeader'
 import Card from '../../components/Card'
+import ProfessionalMyEvents from '../../components/ProfessionalMyEvents'
 
 /* ────────────────────────────────────────────── */
 /* Professional Animations & Styles                */
@@ -348,27 +349,54 @@ function ProfessionalCommanderCard({ cmd, index = 0 }) {
   )
 }
 
-function ProfessionalSegmentedTabs({ current, onChange, canEdit }) {
+function ProfessionalSegmentedTabs({ current, onChange, canEdit, eventsCount = 0 }) {
+  const tabs = [
+    {
+      key: 'stats',
+      label: 'Estadísticas',
+      icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    },
+    {
+      key: 'events',
+      label: 'Mis Eventos',
+      icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>,
+      count: eventsCount
+    }
+  ]
+
   return (
     <div className="flex items-center justify-center">
-      <div className="inline-flex items-center rounded-lg bg-gray-100 p-1 shadow-sm border border-gray-200">
-        <button
-          type="button"
-          onClick={() => onChange('stats')}
-          className={`relative rounded-md px-6 py-2.5 text-sm font-semibold transition-all duration-300 ${
-            current === 'stats' 
-              ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-          }`}
-        >
-          <span className="relative z-10 flex items-center gap-2">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            Estadísticas
-          </span>
-        </button>
-
+      <div className="inline-flex items-center rounded-lg bg-gray-100 p-1 shadow-sm border border-gray-200 overflow-x-auto">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onChange(tab.key)}
+            className={`relative rounded-md px-6 py-2.5 text-sm font-semibold transition-all duration-300 whitespace-nowrap ${
+              current === tab.key 
+                ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' 
+                : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+            }`}
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              {tab.icon}
+              {tab.label}
+              {tab.count && tab.count > 0 && (
+                <span className={`inline-flex items-center justify-center h-5 w-5 rounded-full text-xs font-bold ${
+                  current === tab.key 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 text-gray-700'
+                }`}>
+                  {tab.count}
+                </span>
+              )}
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -385,7 +413,7 @@ function ProfessionalEmptyCommandersState() {
         <div className="mx-auto mb-6 relative">
           <div className="relative h-20 w-20 rounded-full bg-gray-100 flex items-center justify-center ring-2 ring-gray-200 shadow-sm">
             <svg className="h-10 w-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 00-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
         </div>
@@ -635,6 +663,11 @@ export default function PlayerProfile() {
   const [avatarUrl, setAvatarUrl] = useState('')
   const [highlightPreference, setHighlightPreference] = useState('profile') // 'profile' | 'commander'
 
+  // ⭐ PASO 2: estados adicionales
+  const [userEvents, setUserEvents] = useState([])
+  const [userParticipations, setUserParticipations] = useState([])
+  const [currentTab, setCurrentTab] = useState(tab || 'stats')
+
   // Lógica existente sin cambios
   useEffect(() => {
     let mounted = true
@@ -660,6 +693,13 @@ export default function PlayerProfile() {
   const isOwner = useMemo(() => {
     return Boolean(session?.user?.id && resolvedId && session.user.id === resolvedId)
   }, [session, resolvedId])
+
+  // ⭐ PASO 3: sincronizar tab desde la URL
+  useEffect(() => {
+    if (tab && ['stats', 'events', 'edit'].includes(tab)) {
+      setCurrentTab(tab)
+    }
+  }, [tab])
 
   useEffect(() => {
     let mounted = true
@@ -702,6 +742,47 @@ export default function PlayerProfile() {
           .order('games_played', { ascending: false })
           .limit(6)
         if (tcErr) throw tcErr
+
+        // ⭐ PASO 4: cargar eventos del usuario si es owner
+        if (isOwner && resolvedId) {
+          const [eventsRes, participationsRes] = await Promise.allSettled([
+            // Eventos creados por el usuario
+            supabase
+              .from('events')
+              .select(`
+                *,
+                participant_count:event_participants(count)
+              `)
+              .eq('created_by', resolvedId)
+              .order('starts_at', { ascending: false }),
+            
+            // Participaciones del usuario
+            supabase
+              .from('event_participants')
+              .select(`
+                status,
+                created_at,
+                event:events(*)
+              `)
+              .eq('user_id', resolvedId)
+              .order('created_at', { ascending: false })
+          ])
+
+          if (eventsRes.status === 'fulfilled' && eventsRes.value.data) {
+            const events = eventsRes.value.data.map(event => ({
+              ...event,
+              participant_count: event.participant_count?.[0]?.count || 0
+            }))
+            if (!mounted) return
+            setUserEvents(events)
+          }
+
+          if (participationsRes.status === 'fulfilled' && participationsRes.value.data) {
+            const participations = participationsRes.value.data.filter(p => p.event) // Solo incluir si el evento existe
+            if (!mounted) return
+            setUserParticipations(participations)
+          }
+        }
 
         const matchIds = Array.from(new Set((parts || []).map(m => m.match_id))).filter(Boolean)
         let playedMatchesDetailed = []
@@ -762,7 +843,7 @@ export default function PlayerProfile() {
 
     fetchData()
     return () => { mounted = false }
-  }, [resolvedId])
+  }, [resolvedId, isOwner])
 
   // ⬇️ Cálculo de imagen destacada con preferencia y fallbacks seguros
   const commanderImage = useMemo(
@@ -879,7 +960,6 @@ export default function PlayerProfile() {
 
   if (!stats) return null
 
-  const currentTab = 'stats'
   const winrate = Number.isFinite(stats.winRate) ? stats.winRate : (stats.totalGames ? ((stats.totalWins / stats.totalGames) * 100) : 0)
   
   const getWinrateTheme = (rate) => {
@@ -918,20 +998,26 @@ export default function PlayerProfile() {
   }
 
   const winrateTheme = getWinrateTheme(winrate)
-  const goTab = (t) => router.replace({ query: { id, tab: t } }, undefined, { shallow: true })
 
+  // ⭐ PASO 6: lógica tabs + URL
+  const totalEventsCount = userEvents.length + userParticipations.length
+  const goTab = (t) => {
+    setCurrentTab(t)
+    router.replace({ query: { id, tab: t } }, undefined, { shallow: true })
+  }
+
+  // Render principal
   return (
     <section className="py-8 pb-24 px-4 bg-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Professional Header */}
+        {/* Header profesional */}
         <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-500 hover:shadow-md">
-          {/* Professional gradient header */}
+          {/* Barra superior */}
           <div className="h-1 bg-gradient-to-r from-gray-600 to-slate-700" />
 
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8 p-8 lg:p-10">
-            {/* Professional Avatar Section */}
+            {/* Avatar / imagen destacada */}
             <div className="relative flex-shrink-0">
-              {/* NUEVO: Avatar con preferencia y fallbacks */}
               <div className={`relative h-32 w-32 lg:h-40 lg:w-40 rounded-full overflow-hidden ring-2 ${winrateTheme.border} shadow-md transition-all duration-500 group-hover:scale-105 bg-gray-100`}>
                 <Image
                   src={highlightImage || '/default-avatar.png'}
@@ -941,7 +1027,7 @@ export default function PlayerProfile() {
                   sizes="160px"
                   priority
                 />
-                {/* Status indicator */}
+                {/* Indicador de estado */}
                 <div className={`absolute -top-1 -right-1 h-8 w-8 rounded-full bg-gradient-to-br ${winrateTheme.gradient} ring-2 ring-white flex items-center justify-center text-xs font-semibold text-white shadow-md`}>
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -950,9 +1036,8 @@ export default function PlayerProfile() {
               </div>
             </div>
 
-            {/* Profile Info */}
+            {/* Info perfil */}
             <div className="min-w-0 flex-1 space-y-6">
-              {/* Name and status */}
               <div className="space-y-3">
                 <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-gray-900">
                   {nickname || 'Jugador'}
@@ -970,13 +1055,12 @@ export default function PlayerProfile() {
                       'Perfil público del jugador'
                     )}
                   </p>
-                  {/* Status badge */}
                   <div className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold ${winrateTheme.bg} ${winrateTheme.text} border ${winrateTheme.border}`}>
                     <span>{winrateTheme.status}</span>
                   </div>
                 </div>
 
-                {/* NUEVO: Botón Editar perfil solo para owner */}
+                {/* Botón editar (solo owner) */}
                 {isOwner && (
                   <div className="mt-2">
                     <Link
@@ -992,7 +1076,7 @@ export default function PlayerProfile() {
                 )}
               </div>
 
-              {/* Winrate Display */}
+              {/* Winrate */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1013,14 +1097,13 @@ export default function PlayerProfile() {
                     </p>
                   </div>
                 </div>
-                
-                {/* Professional Progress Bar */}
+
+                {/* Barra de progreso */}
                 <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-200">
                   <div
                     className={`h-full rounded-full bg-gradient-to-r ${winrateTheme.gradient} transition-all duration-1000 ease-out relative`}
                     style={{ width: `${Math.min(100, Math.max(0, winrate))}%` }}
                   >
-                    {/* Subtle shimmer effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full transition-transform duration-1500 group-hover:translate-x-full" />
                   </div>
                 </div>
@@ -1029,26 +1112,38 @@ export default function PlayerProfile() {
           </div>
         </div>
 
-        {/* Professional Tabs */}
+        {/* Tabs profesionales */}
         <div className="flex justify-center">
-          <ProfessionalSegmentedTabs current="stats" onChange={goTab} canEdit={false} />
+          <ProfessionalSegmentedTabs 
+            current={currentTab} 
+            onChange={goTab} 
+            canEdit={isOwner}
+            eventsCount={isOwner ? totalEventsCount : 0}
+          />
         </div>
 
+        {/* Contenido por pestaña */}
         {currentTab === 'edit' ? (
           <ProfessionalEditProfileForm
             initialNickname={nickname}
             onSaved={(newNick) => setNickname(newNick)}
           />
+        ) : currentTab === 'events' ? (
+          <ProfessionalMyEvents
+            userEvents={userEvents}
+            userParticipations={userParticipations}
+            isOwner={isOwner}
+          />
         ) : (
           <>
-            {/* Professional Stats Grid */}
+            {/* Stats principales */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <ProfessionalStatTile label="Partidas jugadas" value={stats.totalGames} index={0} />
               <ProfessionalStatTile label="Victorias totales" value={stats.totalWins} index={1} />
               <ProfessionalStatTile label="Racha máxima" value={stats.maxStreak} index={2} />
             </div>
 
-            {/* Additional Stats */}
+            {/* Stats adicionales */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <ProfessionalStatTile 
                 label="Daño máx. promedio" 
@@ -1060,20 +1155,18 @@ export default function PlayerProfile() {
               <ProfessionalStatTile label="Eliminado primero" value={stats.firstToDie} index={5} />
             </div>
 
-            {/* Professional Commanders Section */}
+            {/* Comandantes más usados */}
             <div className="group relative">
               <Card className="relative overflow-hidden border border-gray-200 bg-white shadow-sm transition-all duration-500 hover:shadow-md" padding="none">
-                {/* Professional header */}
                 <div className="h-1 bg-gradient-to-r from-gray-600 to-slate-700" />
 
                 <div className="p-8 lg:p-10">
-                  {/* Section Header */}
                   <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div className="space-y-2">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-lg bg-gray-900 flex items-center justify-center text-white shadow-sm">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 00-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                           </svg>
                         </div>
                         <div>
@@ -1109,7 +1202,7 @@ export default function PlayerProfile() {
                     </div>
                   </div>
 
-                  {/* Commanders Grid */}
+                  {/* Grid de comandantes */}
                   {stats.topCommanders.length === 0 ? (
                     <ProfessionalEmptyCommandersState />
                   ) : (

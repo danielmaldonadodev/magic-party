@@ -277,6 +277,7 @@ export default function Navbar() {
 
   const NAV_ITEMS = [
     { href: '/matches', label: 'Partidas', Icon: Icons.Swords },
+    { href: '/events',  label: 'Eventos',  Icon: Icons.CalendarDays },
     { href: '/players', label: 'Jugadores', Icon: Icons.Users },
     { href: '/ranking', label: 'Ranking', Icon: Icons.Trophy },
     { href: '/stats', label: 'Estadísticas', Icon: Icons.BarChart3 },
