@@ -553,7 +553,7 @@ function AddParticipantForm({ onAdd, existingParticipants }) {
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm])
+  }, [searchTerm, searchUsers])
 
   if (!isOpen) {
     return (
