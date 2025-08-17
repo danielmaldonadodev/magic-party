@@ -6,6 +6,7 @@ import { format, addDays, isBefore, isAfter } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { supabase } from '../../../lib/supabaseClient'
 import { createSupabaseServerClient } from '../../../lib/supabaseServer'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 
 /* ===============================================================
   FUNCIONES DE CALENDARIO INTEGRADAS
@@ -466,7 +467,7 @@ function ParticipantCard({ participant, profile, onStatusChange, onRemove }) {
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                   >
                     <span className="text-yellow-600">?</span>
-                    Marcar como "tal vez"
+                    Marcar como &quot;tal vez&quot;
                   </button>
                 )}
                 
