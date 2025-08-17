@@ -277,7 +277,7 @@ function ParticipantCard({ participant, profile, onStatusChange, onRemove, canPr
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                   >
                     <span className="text-yellow-600">?</span>
-                    Marcar como "tal vez"
+                    Marcar como &quot;tal vez&quot;
                   </button>
                 )}
                 
