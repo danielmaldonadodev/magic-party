@@ -270,7 +270,7 @@ function ProfessionalHero({ theme, onCancel }) {
             </p>
           </div>
           <div className={`${loaded ? 'animate-professional-fade-in' : 'opacity-0'}`} style={{ animationDelay: '0.6s' }}>
-            <button onClick={onCancel} className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/80 backdrop-blur-sm font-semibold text-gray-800 border-2 border-gray-300 hover:border-gray-400 hover:bg-white transition-all duration-300 hover:scale-105">
+            <button onClick={onCancel} className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/80 backdrop-blur-sm font-semibold text-gray-800 border-2 border-gray-300 sm:hover:border-gray-400 sm:hover:bg-white transition-all duration-300 sm:hover:scale-105">
               <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
               Volver a Eventos
             </button>
@@ -524,9 +524,9 @@ const handleSubmit = async (e) => {
   }
 
   return (
-    <div className="min-h-screen theme-transition pb-24" style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}>
-      <div className="fixed top-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl pointer-events-none"/>
-      <div className="fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-white/10 to-transparent rounded-full blur-3xl pointer-events-none"/>
+    <div className="min-h-dvh theme-transition pb-16 sm:pb-24 overflow-x-hidden" style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}>
+      <div className="hidden sm:block fixed top-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl pointer-events-none"/>
+      <div className="hidden sm:block fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-white/10 to-transparent rounded-full blur-3xl pointer-events-none"/>
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
         <ProfessionalHero theme={theme} onCancel={handleCancel} />
@@ -534,7 +534,7 @@ const handleSubmit = async (e) => {
         <div className="crystal-card">
           <Card className="relative overflow-hidden bg-white/95 backdrop-blur-lg border border-gray-200/50 shadow-2xl" padding="none">
             <div className={`h-1 bg-gradient-to-r ${theme.colors.primary}`}/>
-            <form onSubmit={handleSubmit} className="p-8 space-y-8">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-6 sm:space-y-8">
               <ProgressIndicator currentStep={currentStep} totalSteps={totalSteps} theme={theme} />
 
               {error && <ProfessionalAlert type="error" title="Error" message={error} onDismiss={() => setError(null)} />}
@@ -823,40 +823,46 @@ const handleSubmit = async (e) => {
               </section>
 
               {/* Actions */}
-              <div className="flex items-center justify-between pt-8 border-t border-gray-200">
-                <div className="text-sm text-gray-500">Progreso: {currentStep}/{totalSteps} secciones completadas</div>
-                <div className="flex items-center gap-4">
-                  <button 
-                    type="button" 
-                    onClick={handleCancel} 
-                    disabled={submitting} 
-                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200 disabled:opacity-50"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting || currentStep < totalSteps}
-                    className={`inline-flex items-center gap-2 rounded-lg px-8 py-3 text-sm font-bold shadow-lg focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      currentStep >= totalSteps ? `${theme.gradient} text-white hover:shadow-xl hover:scale-105 ${theme.colors.ring}` : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {submitting ? (
-                      <>
-                        <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                        </svg>
-                        Creando evento...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        {currentStep >= totalSteps ? 'Crear Evento' : `Completa ${totalSteps - currentStep} sección${totalSteps - currentStep !== 1 ? 'es' : ''} más`}
-                      </>
-                    )}
-                  </button>
+              <div className="pt-6 sm:pt-8 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                  <div className="text-sm text-gray-500">
+                    Progreso: {currentStep}/{totalSteps} secciones completadas
+                  </div>
+
+                  <div className="flex-1 sm:flex-none sm:ml-auto flex flex-col sm:flex-row gap-3">
+                    <button 
+                      type="button" 
+                      onClick={handleCancel} 
+                      disabled={submitting} 
+                      className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200 disabled:opacity-50"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                      Cancelar
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={submitting || currentStep < totalSteps}
+                      className={`w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg px-8 py-3 text-sm font-bold shadow-lg focus:outline-none focus:ring-4 focus:ring-offset-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                        currentStep >= totalSteps ? `${theme.gradient} text-white sm:hover:shadow-xl sm:hover:scale-105 ${theme.colors.ring}` : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {submitting ? (
+                        <>
+                          <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                          </svg>
+                          Creando evento...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                          {currentStep >= totalSteps ? 'Crear Evento' : `Completa ${totalSteps - currentStep} sección${totalSteps - currentStep !== 1 ? 'es' : ''} más`}
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </form>
