@@ -339,34 +339,18 @@ function useThemeRotation(intervalMs = 40000) {
 const RECURSOS_DATA = {
   tiendas: [
     {
-      id: 'tcgplayer',
-      nombre: 'TCGPlayer',
-      url: 'https://www.tcgplayer.com',
-      descripcion: 'Marketplace líder en Estados Unidos para cartas de MTG',
-      tipo: 'Internacional',
-      icono: '⬡'
-    },
-    {
       id: 'cardmarket',
       nombre: 'Cardmarket',
       url: 'https://www.cardmarket.com/es/Magic',
-      descripcion: 'El marketplace europeo más grande para Magic',
+      descripcion: 'El marketplace europeo más grande para Magic. Imprescindible en España para comprar y vender cartas.',
       tipo: 'Europa',
       icono: '⬢'
-    },
-    {
-      id: 'card-kingdom',
-      nombre: 'Card Kingdom',
-      url: 'https://www.cardkingdom.com',
-      descripcion: 'Tienda premium con excelente servicio al cliente',
-      tipo: 'Premium',
-      icono: '◆'
     },
     {
       id: 'generacion-x',
       nombre: 'Generación X',
       url: 'https://www.generacionx.com',
-      descripcion: 'Tienda española especializada en juegos de mesa y cartas',
+      descripcion: 'Cadena española con tiendas físicas y online. Buen sitio para sellado, fundas y cartas sueltas.',
       tipo: 'España',
       icono: '◇'
     },
@@ -374,91 +358,59 @@ const RECURSOS_DATA = {
       id: 'devir',
       nombre: 'Devir',
       url: 'https://www.devir.es',
-      descripcion: 'Distribuidora oficial de Magic en España',
+      descripcion: 'Distribuidor oficial de Magic en España. Referencia para lanzamientos y productos sellados.',
       tipo: 'España',
       icono: '◈'
     }
   ],
   herramientas: [
     {
-      id: 'spelltable',
-      nombre: 'SpellTable',
-      url: 'https://spelltable.wizards.com',
-      descripcion: 'Plataforma oficial de Wizards para jugar Magic online con webcam',
-      tipo: 'Oficial',
-      icono: '⬟'
-    },
-    {
       id: 'scryfall',
       nombre: 'Scryfall',
       url: 'https://scryfall.com',
-      descripcion: 'Motor de búsqueda avanzado de cartas con sintaxis potente',
+      descripcion: 'El mejor buscador de cartas, con imágenes, ediciones y texto oráculo. Búsqueda avanzada.',
       tipo: 'Búsqueda',
       icono: '◯'
-    },
-    {
-      id: 'mtg-arena',
-      nombre: 'MTG Arena',
-      url: 'https://magic.wizards.com/en/mtgarena',
-      descripcion: 'El juego digital oficial de Magic: The Gathering',
-      tipo: 'Digital',
-      icono: '⬢'
     },
     {
       id: 'moxfield',
       nombre: 'Moxfield',
       url: 'https://www.moxfield.com',
-      descripcion: 'Constructor de mazos moderno con estadísticas avanzadas',
+      descripcion: 'Constructor de mazos moderno con estadísticas y curva. Perfecto para Commander y Standard casual.',
       tipo: 'Deckbuilding',
       icono: '▣'
-    },
-    {
-      id: 'archidekt',
-      nombre: 'Archidekt',
-      url: 'https://archidekt.com',
-      descripcion: 'Herramienta visual para construir y compartir mazos',
-      tipo: 'Deckbuilding',
-      icono: '▢'
     },
     {
       id: 'edhrec',
       nombre: 'EDHRec',
       url: 'https://edhrec.com',
-      descripcion: 'Estadísticas y recomendaciones para Commander/EDH',
+      descripcion: 'Ideas y estadísticas para Commander/EDH basadas en listas reales. Ideal para inspirarte.',
       tipo: 'Commander',
       icono: '▲'
+    },
+    {
+      id: 'spelltable',
+      nombre: 'SpellTable',
+      url: 'https://spelltable.wizards.com',
+      descripcion: 'Plataforma oficial para jugar por webcam con amigos. Muy útil si no os veis en persona.',
+      tipo: 'Oficial',
+      icono: '⬟'
     }
   ],
   calculadoras: [
     {
-      id: 'hypergeometric',
-      nombre: 'Calculadora Hipergeométrica',
-      url: 'https://stattrek.com/online-calculator/hypergeometric.aspx',
-      descripcion: 'Calcula probabilidades de robar cartas específicas',
-      tipo: 'Probabilidad',
-      icono: '◈'
-    },
-    {
-      id: 'mana-curve',
-      nombre: 'Analizador de Curva de Maná',
-      url: 'https://www.mtggoldfish.com/tools/deck_pricer',
-      descripcion: 'Analiza la distribución de costes de maná de tu mazo',
-      tipo: 'Análisis',
-      icono: '◣'
-    },
-    {
       id: 'mtg-goldfish-prices',
       nombre: 'MTGGoldfish Precios',
       url: 'https://www.mtggoldfish.com',
-      descripcion: 'Seguimiento de precios y tendencias del mercado',
+      descripcion: 'Seguimiento de precios y tendencias del mercado. Útil para saber si una carta está cara o barata.',
       tipo: 'Precios',
       icono: '◐'
     },
     {
       id: 'deck-pricer',
-      nombre: 'Calculadora de Precios',
+      nombre: 'Calculadora de Precios (Deck Pricer)',
       url: 'https://www.mtggoldfish.com/tools/deck_pricer',
-      descripcion: 'Calcula el precio total de tu mazo',
+      descripcion: 'Calcula el precio total de tu mazo y alternativas más baratas.',
       tipo: 'Precios',
       icono: '◑'
     }
@@ -468,7 +420,7 @@ const RECURSOS_DATA = {
       id: 'commander-rules',
       nombre: 'Reglas de Commander',
       url: 'https://mtgcommander.net/index.php/rules/',
-      descripcion: 'Reglas oficiales del formato Commander/EDH',
+      descripcion: 'Reglas oficiales del formato Commander/EDH. El formato casual más popular.',
       tipo: 'Commander',
       icono: '▲'
     },
@@ -476,49 +428,17 @@ const RECURSOS_DATA = {
       id: 'standard-rotation',
       nombre: 'Rotación Standard',
       url: 'https://whatsinstandard.com',
-      descripcion: 'Sets legales en Standard y fechas de rotación',
+      descripcion: 'Sets legales en Standard y fechas de rotación (si probáis Standard con proxies).',
       tipo: 'Standard',
       icono: '◯'
-    },
-    {
-      id: 'modern-banlist',
-      nombre: 'Banlist Modern',
-      url: 'https://magic.wizards.com/en/game-info/gameplay/rules-and-formats/banned-restricted',
-      descripcion: 'Lista oficial de cartas prohibidas en Modern',
-      tipo: 'Modern',
-      icono: '◆'
-    },
-    {
-      id: 'pioneer-legal',
-      nombre: 'Pioneer Legal',
-      url: 'https://magic.wizards.com/en/game-info/gameplay/formats/pioneer',
-      descripcion: 'Sets y cartas legales en el formato Pioneer',
-      tipo: 'Pioneer',
-      icono: '◇'
     }
   ],
   normas: [
     {
-      id: 'comprehensive-rules',
-      nombre: 'Reglas Comprehensivas',
-      url: 'https://magic.wizards.com/en/rules',
-      descripcion: 'El documento completo de reglas oficiales de Magic',
-      tipo: 'Oficial',
-      icono: '▣'
-    },
-    {
-      id: 'tournament-rules',
-      nombre: 'Reglas de Torneo',
-      url: 'https://wpn.wizards.com/en/resources/rules-documents',
-      descripcion: 'Reglas para eventos competitivos y sanctions',
-      tipo: 'Torneo',
-      icono: '◈'
-    },
-    {
       id: 'mulligan-guide',
-      nombre: 'Guía de Mulligan',
+      nombre: 'Guía de Mulligan (London Mulligan)',
       url: 'https://magic.wizards.com/en/articles/archive/feature/london-mulligan-2019-06-03',
-      descripcion: 'Cómo funciona el mulligan moderno (London Mulligan)',
+      descripcion: 'Cómo funciona el mulligan moderno explicado de forma clara.',
       tipo: 'Guía',
       icono: '◯'
     },
@@ -526,62 +446,39 @@ const RECURSOS_DATA = {
       id: 'priority-stack',
       nombre: 'Prioridad y Stack',
       url: 'https://mtg.fandom.com/wiki/Stack',
-      descripcion: 'Explicación detallada de prioridad y resolución de hechizos',
+      descripcion: 'Explicación práctica de prioridad y resolución de hechizos. Muy útil para evitar dudas.',
       tipo: 'Guía',
       icono: '⬢'
     }
   ],
   proxies: [
     {
-      id: 'mtgcardbuilder',
-      nombre: 'MTGCardBuilder',
-      url: 'https://mtgcardbuilder.com',
-      descripcion: 'Creador de cartas personalizado con marcos oficiales y alta resolución',
-      tipo: 'Avanzado',
-      icono: '▲'
+      id: 'mtg-proxy-generator',
+      nombre: 'MTG Proxy Generator',
+      url: 'https://philo-jh.github.io/MTG-Proxy-Generator/',
+      descripcion: 'Generador gratuito para imprimir en casa o copistería en España. Rápido y sin registro.',
+      tipo: 'Gratuito',
+      icono: '◇'
     },
     {
       id: 'mtggoldfish-proxies',
       nombre: 'MTGGoldfish Proxies',
       url: 'https://www.mtggoldfish.com/proxies/new',
-      descripcion: 'Generador rápido de proxies desde decklists',
+      descripcion: 'Genera proxies directamente desde tu decklist. Ideal para pruebas rápidas.',
       tipo: 'Simple',
       icono: '◯'
     },
     {
-      id: 'mtg-print',
-      nombre: 'MTG Print',
-      url: 'https://mtg-print.com',
-      descripcion: 'Impresión premium de proxies en cardstock alemán S33',
-      tipo: 'Printing',
-      icono: '▣'
-    },
-    {
-      id: 'printmtg',
-      nombre: 'PrintMTG',
-      url: 'https://printmtg.com',
-      descripcion: 'Servicio de impresión de alta calidad con diseños personalizables',
-      tipo: 'Printing',
-      icono: '◆'
-    },
-    {
-      id: 'mythic-black-core',
-      nombre: 'Mythic Black Core',
-      url: 'https://www.mythicblackcore.com',
-      descripcion: 'Proxies premium con foil y cardstock idéntico al oficial',
-      tipo: 'Premium',
-      icono: '◈'
-    },
-    {
-      id: 'mtg-proxy-generator',
-      nombre: 'MTG Proxy Generator',
-      url: 'https://philo-jh.github.io/MTG-Proxy-Generator/',
-      descripcion: 'Generador gratuito optimizado para impresión casera',
-      tipo: 'Gratuito',
-      icono: '◇'
+      id: 'mtgcardbuilder',
+      nombre: 'MTGCardBuilder',
+      url: 'https://mtgcardbuilder.com',
+      descripcion: 'Creador de cartas con marcos muy fieles. Útil si queréis estética cuidada antes de imprimir en España.',
+      tipo: 'Avanzado',
+      icono: '▲'
     }
   ]
 }
+
 
 const CATEGORIAS = [
   { key: 'todos', label: 'Todos', icono: '◉', descripcion: 'Ver todos los recursos disponibles' },
