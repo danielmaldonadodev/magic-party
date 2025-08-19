@@ -1259,8 +1259,6 @@
     onJoinEvent, onLeaveEvent, currentUser,
     participants = [], profiles = []
   }) {
-    if (!isOpen) return null
-
     const userParticipations = useMemo(() => {
       if (!currentUser) return {}
       const map = {}
@@ -1282,6 +1280,8 @@
       for (const p of profiles) acc[p.id] = p.nickname || 'Usuario'
       return acc
     }, [profiles])
+
+    if (!isOpen) return null
 
     return (
       <div className="fixed inset-0 z-[2000] overflow-y-auto">

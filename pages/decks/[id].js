@@ -579,10 +579,10 @@ function DeleteConfirmModal({ deckName, onConfirm, onCancel }) {
           </h3>
           
           <p className="text-gray-600 mb-6">
-            ¿Estás seguro de que quieres eliminar <strong>"{deckName}"</strong>? 
+            ¿Estás seguro de que quieres eliminar <strong>&quot;{deckName}&quot;</strong>? 
             Esta acción no se puede deshacer.
           </p>
-          
+        
           <div className="flex gap-3">
             <button
               onClick={onCancel}
