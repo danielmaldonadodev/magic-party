@@ -277,12 +277,13 @@ export default function Navbar() {
 
   const NAV_ITEMS = [
     { href: '/matches', label: 'Partidas', Icon: Icons.Swords },
+    { href: '/decks', label: 'Mazos', Icon: Icons.Library }, // ← AGREGAR ESTA LÍNEA
     { href: '/events',  label: 'Eventos',  Icon: Icons.CalendarDays },
     { href: '/players', label: 'Jugadores', Icon: Icons.Users },
     { href: '/ranking', label: 'Ranking', Icon: Icons.Trophy },
     { href: '/stats', label: 'Estadísticas', Icon: Icons.BarChart3 },
     { href: '/formats', label: 'Formatos', Icon: Icons.Library },
-    { href: '/recursos', label: 'Recursos', Icon: Icons.BookOpen }, // ← AÑADIR ESTA LÍNEA
+    { href: '/recursos', label: 'Recursos', Icon: Icons.BookOpen },
   ]
 
   // Función para obtener clases temáticas dinámicas con mejor contraste
@@ -499,6 +500,14 @@ export default function Navbar() {
     
     if (href === '/players') {
       return currentPath === '/players' || currentPath === '/players/[id]'
+    }
+    
+    // ← AGREGAR ESTAS LÍNEAS:
+    if (href === '/decks') {
+      return currentPath === '/decks' || 
+            currentPath === '/decks/[id]' || 
+            currentPath === '/decks/new' ||
+            currentPath === '/decks/[id]/edit'
     }
     
     return currentQuery.startsWith(`${href}/`)

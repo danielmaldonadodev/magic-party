@@ -1,4 +1,4 @@
-  import { useEffect, useMemo, useState, useRef } from 'react'
+  import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
   import Link from 'next/link'
   import Image from 'next/image'
   import { 
@@ -1676,7 +1676,27 @@
 
     {/* Vista desktop: eventos detallados */}
     <div className="hidden sm:block flex-1 px-1.5 pb-1 overflow-hidden">
-      {/* ... resto del código de desktop ... */}
+      <div className="space-y-1">
+        {dayEvents.slice(0, 3).map((ev, i) => (
+          <div
+            key={ev.id}
+            className={`
+              px-1.5 py-0.5 rounded text-[10px] font-medium truncate
+              border transition-all duration-200
+              ${chipColor(ev)}
+              group-hover:scale-105
+            `}
+            title={ev.title}
+          >
+            {ev.title}
+          </div>
+        ))}
+        {dayEvents.length > 3 && (
+          <div className="text-[9px] text-gray-500 font-medium px-1.5">
+            +{dayEvents.length - 3} más
+          </div>
+        )}
+      </div>
     </div>
   </div>
 
@@ -1842,23 +1862,26 @@
       }
       
       loadInitialData()
-      return () => { ignore = true }
-    }, [])
+    return () => { ignore = true }
+    }, [events.length, formats.length, participants.length, profiles.length]) 
 
-    // Maps para optimización
+    // Maps para optimización (corregir verificaciones)
     const formatById = useMemo(() => {
+      if (!formats || formats.length === 0) return {}
       const acc = {}
       for (const f of formats) acc[f.id] = f.name
       return acc
     }, [formats])
 
     const profileById = useMemo(() => {
+      if (!profiles || profiles.length === 0) return {}
       const acc = {}
       for (const p of profiles) acc[p.id] = p.nickname
       return acc
     }, [profiles])
 
     const participantsByEventId = useMemo(() => {
+      if (!participants || participants.length === 0) return {}
       const acc = {}
       for (const p of participants) {
         if (!acc[p.event_id]) acc[p.event_id] = []
@@ -1901,60 +1924,60 @@
       })
     }, [events, selectedFormat, query, showPastEvents, formatById, profileById])
 
-    // 🚀 FUNCIÓN: Mostrar modal de calendario
-    const handleShowCalendar = (event, creatorName) => {
+    // 🚀 FUNCIÓN: Mostrar modal de calendario (corregir para usar useCallback)
+    const handleShowCalendar = useCallback((event, creatorName) => {
       setCalendarModal({ isOpen: true, event, creatorName })
-    }
+    }, [])
 
-    // Acciones de participación
-    const handleJoinEvent = async (eventId) => {
-      if (!currentUser) return
+// Acciones de participación (corregir para usar useCallback)
+const handleJoinEvent = useCallback(async (eventId) => {
+  if (!currentUser) return
 
-      try {
-        const { error } = await supabase
-          .from('event_participants')
-          .insert({
-            event_id: eventId,
-            user_id: currentUser.id,
-            status: 'going'
-          })
+  try {
+    const { error } = await supabase
+      .from('event_participants')
+      .insert({
+        event_id: eventId,
+        user_id: currentUser.id,
+        status: 'going'
+      })
 
-        if (error) throw error
+    if (error) throw error
 
-        // Actualizar estado local
-        setParticipants(prev => [...prev, {
-          event_id: eventId,
-          user_id: currentUser.id,
-          status: 'going',
-          created_at: new Date().toISOString()
-        }])
-      } catch (error) {
-        console.error('Error joining event:', error)
-        alert('Error al apuntarse al evento')
-      }
-    }
+    // Actualizar estado local
+    setParticipants(prev => [...prev, {
+      event_id: eventId,
+      user_id: currentUser.id,
+      status: 'going',
+      created_at: new Date().toISOString()
+    }])
+  } catch (error) {
+    console.error('Error joining event:', error)
+    alert('Error al apuntarse al evento')
+  }
+}, [currentUser])
 
-    const handleLeaveEvent = async (eventId) => {
-      if (!currentUser) return
+const handleLeaveEvent = useCallback(async (eventId) => {
+  if (!currentUser) return
 
-      try {
-        const { error } = await supabase
-          .from('event_participants')
-          .delete()
-          .eq('event_id', eventId)
-          .eq('user_id', currentUser.id)
+  try {
+    const { error } = await supabase
+      .from('event_participants')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('user_id', currentUser.id)
 
-        if (error) throw error
+    if (error) throw error
 
-        // Actualizar estado local
-        setParticipants(prev => 
-          prev.filter(p => !(p.event_id === eventId && p.user_id === currentUser.id))
-        )
-      } catch (error) {
-        console.error('Error leaving event:', error)
-        alert('Error al cancelar participación')
-      }
-    }
+    // Actualizar estado local
+    setParticipants(prev => 
+      prev.filter(p => !(p.event_id === eventId && p.user_id === currentUser.id))
+    )
+  } catch (error) {
+    console.error('Error leaving event:', error)
+    alert('Error al cancelar participación')
+  }
+}, [currentUser])
 
     if (loading) {
       return (
