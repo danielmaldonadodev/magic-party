@@ -356,7 +356,7 @@ export default function EditDeckPage({ deck: initialDeck, error: initialError })
                           <h4 className="font-medium text-blue-900 mb-1">Sincronización Automática</h4>
                           <p className="text-sm text-blue-700">
                             Con una URL externa configurada, podrás sincronizar automáticamente 
-                            los cambios desde la plataforma externa usando el botón "Sincronizar" 
+                            los cambios desde la plataforma externa usando el botón &quot;Sincronizar&quot; 
                             en la página del mazo.
                           </p>
                         </div>
