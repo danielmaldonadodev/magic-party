@@ -154,7 +154,7 @@ export default function EditDeckPage({ deck: initialDeck, error: initialError })
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Sin permisos</h2>
           <p className="text-gray-600 mb-6">
-            Solo puedes editar tus propios mazos.
+            <p>Este texto tiene &quot;comillas&quot; dentro</p>
           </p>
           <Link
             href={`/decks/${deck.id}`}

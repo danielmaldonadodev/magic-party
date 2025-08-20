@@ -832,7 +832,7 @@ function ProfessionalDeleteModal({ theme, deckName, onConfirm, onCancel }) {
             <h3 className="text-xl font-bold text-gray-900 mb-3">¿Eliminar mazo?</h3>
             
             <p className="text-gray-600 mb-6 leading-relaxed">
-              ¿Estás seguro de que quieres eliminar <strong>"{deckName}"</strong>? 
+              ¿Estás seguro de que quieres eliminar <strong>&quot;{deckName}&quot;</strong>?
               Esta acción no se puede deshacer.
             </p>
           
