@@ -646,19 +646,6 @@ export default function RecursosPage() {
         {/* Hero Section */}
         <section className="relative overflow-hidden py-8 sm:py-12 lg:py-16">
           <div className="text-center space-y-4 sm:space-y-6">
-            {/* Breadcrumb */}
-            <div 
-              className={`inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full professional-glass ${
-                loaded ? 'animate-professional-fade-in' : 'opacity-0'
-              }`}
-              style={{ animationDelay: '0.2s' }}
-            >
-              <Link href="/" className={`text-sm font-medium ${theme.text.soft} hover:${theme.text.strong} transition-colors`}>
-                🏠 Inicio
-              </Link>
-              <span className={`text-sm ${theme.text.soft}`}>→</span>
-              <span className={`text-sm font-bold ${theme.text.strong}`}>📚 Recursos</span>
-            </div>
 
             {/* Theme indicator */}
             <div 

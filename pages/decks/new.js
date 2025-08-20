@@ -220,7 +220,7 @@ const handleSave = async () => {
         {step === 2 && deckData && (
           <DeckPreviewStep 
             deckData={deckData}
-            onSave={handleSaveDeck}
+            onSave={handleSave}
             onBack={() => setStep(1)}
             loading={loading}
             error={error}

@@ -256,37 +256,61 @@ function useThemeRotation(intervalMs = 40000) {
   return { theme, themeKey, setThemeKey, index, setIndex }
 }
 
+// Navegación reorganizada en grupos lógicos
+const NAVIGATION_CONFIG = {
+  // Enlaces principales - siempre visibles
+  primary: [
+    { href: '/matches', label: 'Partidas', Icon: Icons.Swords },
+    { href: '/decks', label: 'Mazos', Icon: Icons.Library },
+    { href: '/events', label: 'Eventos', Icon: Icons.CalendarDays },
+  ],
+  
+  // Grupo "Comunidad" - dropdown
+  community: {
+    label: 'Comunidad',
+    Icon: Icons.Users,
+    items: [
+      { href: '/players', label: 'Jugadores', Icon: Icons.Users },
+      { href: '/ranking', label: 'Ranking', Icon: Icons.Trophy },
+      { href: '/stats', label: 'Estadísticas', Icon: Icons.BarChart3 },
+    ]
+  },
+  
+  // Grupo "Recursos" - dropdown
+  resources: {
+    label: 'Recursos',
+    Icon: Icons.BookOpen,
+    items: [
+      { href: '/formats', label: 'Formatos', Icon: Icons.Library },
+      { href: '/recursos', label: 'Recursos', Icon: Icons.BookOpen },
+    ]
+  }
+}
+
 export default function Navbar() {
   const router = useRouter()
-  const { theme } = useThemeRotation(40000) // Sincronizado con el index
+  const { theme } = useThemeRotation(40000)
 
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [communityMenuOpen, setCommunityMenuOpen] = useState(false)
+  const [resourcesMenuOpen, setResourcesMenuOpen] = useState(false)
   const [user, setUser] = useState(null)
   const [profileNick, setProfileNick] = useState(null)
   const [isReady, setIsReady] = useState(false)
   
-  // NUEVO: Sistema de imagen de perfil avanzado
+  // Sistema de imagen de perfil avanzado
   const [avatarUrl, setAvatarUrl] = useState('')
   const [highlightPreference, setHighlightPreference] = useState('profile')
   const [topCommanderImage, setTopCommanderImage] = useState('')
 
   const userMenuRef = useRef(null)
+  const communityMenuRef = useRef(null)
+  const resourcesMenuRef = useRef(null)
   const mobilePanelRef = useRef(null)
 
-  const NAV_ITEMS = [
-    { href: '/matches', label: 'Partidas', Icon: Icons.Swords },
-    { href: '/decks', label: 'Mazos', Icon: Icons.Library }, // ← AGREGAR ESTA LÍNEA
-    { href: '/events',  label: 'Eventos',  Icon: Icons.CalendarDays },
-    { href: '/players', label: 'Jugadores', Icon: Icons.Users },
-    { href: '/ranking', label: 'Ranking', Icon: Icons.Trophy },
-    { href: '/stats', label: 'Estadísticas', Icon: Icons.BarChart3 },
-    { href: '/formats', label: 'Formatos', Icon: Icons.Library },
-    { href: '/recursos', label: 'Recursos', Icon: Icons.BookOpen },
-  ]
-
-  // Función para obtener clases temáticas dinámicas con mejor contraste
+  // Función para obtener clases temáticas dinámicas
   const getThemeClasses = (accent) => {
     const baseClasses = {
       amber: {
@@ -385,7 +409,6 @@ export default function Navbar() {
       }
       
       try {
-        // Cargar perfil completo con preferencias de imagen
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('nickname, avatar_url, highlight_image_preference')
@@ -399,13 +422,11 @@ export default function Navbar() {
           setAvatarUrl(profile.avatar_url || '')
           setHighlightPreference(profile.highlight_image_preference || 'profile')
         } else {
-          console.log('No profile found or error:', error)
           setProfileNick(null)
           setAvatarUrl('')
           setHighlightPreference('profile')
         }
 
-        // Cargar comandante más usado si la preferencia es 'commander'
         if (profile?.highlight_image_preference === 'commander') {
           const { data: topCmd, error: cmdErr } = await supabase
             .from('commander_stats_by_user')
@@ -434,15 +455,22 @@ export default function Navbar() {
     return () => { ignore = true }
   }, [user?.id])
 
+  // Manejo de clicks fuera de los menús
   useEffect(() => {
     const onDown = (e) => {
       if (userMenuOpen && userMenuRef.current && !userMenuRef.current.contains(e.target)) {
         setUserMenuOpen(false)
       }
+      if (communityMenuOpen && communityMenuRef.current && !communityMenuRef.current.contains(e.target)) {
+        setCommunityMenuOpen(false)
+      }
+      if (resourcesMenuOpen && resourcesMenuRef.current && !resourcesMenuRef.current.contains(e.target)) {
+        setResourcesMenuOpen(false)
+      }
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
-  }, [userMenuOpen])
+  }, [userMenuOpen, communityMenuOpen, resourcesMenuOpen])
 
   useEffect(() => {
     if (!mobileOpen) return
@@ -453,7 +481,12 @@ export default function Navbar() {
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') { setMobileOpen(false); setUserMenuOpen(false) }
+      if (e.key === 'Escape') { 
+        setMobileOpen(false)
+        setUserMenuOpen(false)
+        setCommunityMenuOpen(false)
+        setResourcesMenuOpen(false)
+      }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
@@ -470,7 +503,12 @@ export default function Navbar() {
   }, [mobileOpen])
 
   useEffect(() => {
-    const handleRoute = () => { setMobileOpen(false); setUserMenuOpen(false) }
+    const handleRoute = () => { 
+      setMobileOpen(false)
+      setUserMenuOpen(false)
+      setCommunityMenuOpen(false)
+      setResourcesMenuOpen(false)
+    }
     router.events.on('routeChangeStart', handleRoute)
     return () => router.events.off('routeChangeStart', handleRoute)
   }, [router.events])
@@ -502,7 +540,6 @@ export default function Navbar() {
       return currentPath === '/players' || currentPath === '/players/[id]'
     }
     
-    // ← AGREGAR ESTAS LÍNEAS:
     if (href === '/decks') {
       return currentPath === '/decks' || 
             currentPath === '/decks/[id]' || 
@@ -513,10 +550,14 @@ export default function Navbar() {
     return currentQuery.startsWith(`${href}/`)
   }
 
+  // Verificar si algún elemento del grupo está activo
+  const isGroupActive = (group) => {
+    return group.items.some(item => isActive(item.href))
+  }
+
   const displayName = profileNick || user?.user_metadata?.nickname || user?.email || 'Usuario'
   const initial = (displayName || 'U').slice(0, 1).toUpperCase()
 
-  // Función para upgrade de URLs de Scryfall (igual que en el perfil)
   const upgradeScryfall = (url) => {
     if (!url) return url
     try {
@@ -529,7 +570,6 @@ export default function Navbar() {
     return url
   }
 
-  // Lógica de imagen destacada (igual que en el perfil)
   const commanderImage = useMemo(
     () => upgradeScryfall(topCommanderImage || ''),
     [topCommanderImage]
@@ -541,7 +581,6 @@ export default function Navbar() {
     if (pref === 'commander') {
       return commanderImage || avatar || ''
     }
-    // 'profile' por defecto
     return avatar || commanderImage || ''
   }, [avatarUrl, highlightPreference, commanderImage])
 
@@ -552,14 +591,72 @@ export default function Navbar() {
     router.push('/players/me?tab=stats')
   }
 
+  // Componente para Dropdown Desktop
+  const DropdownMenu = ({ config, isOpen, setIsOpen, menuRef }) => {
+    const groupActive = isGroupActive(config)
+    
+    return (
+      <div className="relative" ref={menuRef}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={[
+            'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300',
+            groupActive
+              ? themeClasses.active
+              : `text-white/90 ${themeClasses.hover}`,
+          ].join(' ')}
+        >
+          <config.Icon size={16} />
+          <span>{config.label}</span>
+          <Icons.ChevronDown 
+            size={14} 
+            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+          />
+        </button>
+
+        {isOpen && (
+          <div 
+            className={[
+              'absolute top-full left-0 mt-2 w-48',
+              'backdrop-blur-xl rounded-lg shadow-2xl py-2 z-[110]',
+              'border border-white/30',
+              'bg-gradient-to-br',
+              theme.navbarGradient,
+            ].join(' ')}
+          >
+            {config.items.map(({ href, label, Icon }) => {
+              const active = isActive(href)
+              return (
+                <NavLink
+                  key={href}
+                  href={href}
+                  className={[
+                    'flex items-center gap-3 px-4 py-2 text-sm transition-colors w-full',
+                    active
+                      ? 'bg-white/30 text-white'
+                      : 'text-white/90 hover:bg-white/20 hover:text-white',
+                  ].join(' ')}
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Icon size={16} />
+                  <span>{label}</span>
+                </NavLink>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <>
-      {/* NAVBAR PRINCIPAL - Z-INDEX ALTO Y MEJOR CONTRASTE */}
+      {/* NAVBAR PRINCIPAL OPTIMIZADO */}
       <header
         className={[
           'fixed inset-x-0 top-0 z-[100] h-16',
-          'bg-gradient-to-br',  // ← aplica el gradiente como clase tailwind
-          theme.navbarGradient, // ← from-... to-...
+          'bg-gradient-to-br',
+          theme.navbarGradient,
           'backdrop-blur-md border-b transition-all duration-500',
           scrolled 
             ? `${themeClasses.border} shadow-lg ${themeClasses.shadow}` 
@@ -569,7 +666,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8">
           <div className="flex h-full items-center justify-between">
             
-            {/* LOGO MAGIC PARTY CON MEJOR CONTRASTE */}
+            {/* LOGO */}
             <Link
               href="/"
               className="flex items-center gap-3 text-white font-bold text-lg transition-all duration-300 hover:scale-105"
@@ -583,9 +680,10 @@ export default function Navbar() {
               <span className="hidden sm:block drop-shadow-sm">Magic Party</span>
             </Link>
 
-            {/* NAVEGACIÓN DESKTOP CON MEJOR CONTRASTE */}
+            {/* NAVEGACIÓN DESKTOP OPTIMIZADA */}
             <nav className="hidden lg:flex items-center space-x-1">
-              {NAV_ITEMS.map(({ href, label, Icon }) => {
+              {/* Enlaces principales */}
+              {NAVIGATION_CONFIG.primary.map(({ href, label, Icon }) => {
                 const active = isActive(href)
                 return (
                   <NavLink
@@ -603,9 +701,25 @@ export default function Navbar() {
                   </NavLink>
                 )
               })}
+
+              {/* Dropdown Comunidad */}
+              <DropdownMenu 
+                config={NAVIGATION_CONFIG.community}
+                isOpen={communityMenuOpen}
+                setIsOpen={setCommunityMenuOpen}
+                menuRef={communityMenuRef}
+              />
+
+              {/* Dropdown Recursos */}
+              <DropdownMenu 
+                config={NAVIGATION_CONFIG.resources}
+                isOpen={resourcesMenuOpen}
+                setIsOpen={setResourcesMenuOpen}
+                menuRef={resourcesMenuRef}
+              />
             </nav>
 
-            {/* ACCIONES DERECHA CON MEJOR CONTRASTE */}
+            {/* ACCIONES DERECHA */}
             <div className="flex items-center gap-3">
               {/* USUARIO DESKTOP */}
               {user ? (
@@ -631,15 +745,15 @@ export default function Navbar() {
                     <Icons.ChevronDown size={14} className="opacity-70" />
                   </button>
 
-                  {/* DROPDOWN USUARIO DESKTOP CON MEJOR Z-INDEX */}
-                    {userMenuOpen && (
+                  {/* DROPDOWN USUARIO DESKTOP */}
+                  {userMenuOpen && (
                     <div 
                       className={[
                         'absolute right-0 mt-2 w-64',
                         'backdrop-blur-xl rounded-lg shadow-2xl py-2 z-[110]',
                         'border border-white/30',
                         'bg-gradient-to-br',
-                        theme.navbarGradient, // ← gradiente como clase
+                        theme.navbarGradient,
                       ].join(' ')}
                     >
                       <div className="px-4 py-3 border-b border-white/30">
@@ -696,7 +810,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* MENÚ MÓVIL CON Z-INDEX ALTO */}
+      {/* MENÚ MÓVIL OPTIMIZADO */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[100] lg:hidden">
           {/* Overlay */}
@@ -705,17 +819,17 @@ export default function Navbar() {
             onClick={() => setMobileOpen(false)}
           />
           
-          {/* Panel Temático */}
+          {/* Panel */}
           <div
             ref={mobilePanelRef}
             className={[
               'absolute right-0 top-0 h-full w-80 max-w-[85vw]',
               'shadow-2xl border-l border-white/30 backdrop-blur-xl z-[110]',
               'bg-gradient-to-br',
-              theme.navbarGradient, // ← gradiente como clase
+              theme.navbarGradient,
             ].join(' ')}
           >
-            {/* Header Temático */}
+            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/30 bg-black/20">
               <div className="flex items-center gap-2">
                 <div 
@@ -734,36 +848,101 @@ export default function Navbar() {
             </div>
 
             <div className="flex flex-col h-full">
-              {/* Navegación Principal Temática */}
+              {/* Navegación Principal Mobile */}
               <nav className="flex-1 p-4">
-                <div className="space-y-2">
-                  {NAV_ITEMS.map(({ href, label, Icon }) => {
-                    const active = isActive(href)
-                    return (
-                      <NavLink
-                        key={href}
-                        href={href}
-                        onClick={() => setMobileOpen(false)}
-                        className={[
-                          'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 w-full',
-                          active
-                            ? themeClasses.active
-                            : 'text-white/90 hover:text-white hover:bg-white/20',
-                        ].join(' ')}
-                      >
-                        <Icon size={18} />
-                        <span>{label}</span>
-                      </NavLink>
-                    )
-                  })}
+                <div className="space-y-4">
+                  
+                  {/* Sección: Principales */}
+                  <div>
+                    <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-2">
+                      Principal
+                    </h3>
+                    <div className="space-y-1">
+                      {NAVIGATION_CONFIG.primary.map(({ href, label, Icon }) => {
+                        const active = isActive(href)
+                        return (
+                          <NavLink
+                            key={href}
+                            href={href}
+                            onClick={() => setMobileOpen(false)}
+                            className={[
+                              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 w-full',
+                              active
+                                ? themeClasses.active
+                                : 'text-white/90 hover:text-white hover:bg-white/20',
+                            ].join(' ')}
+                          >
+                            <Icon size={18} />
+                            <span>{label}</span>
+                          </NavLink>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Sección: Comunidad */}
+                  <div>
+                    <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-2">
+                      Comunidad
+                    </h3>
+                    <div className="space-y-1">
+                      {NAVIGATION_CONFIG.community.items.map(({ href, label, Icon }) => {
+                        const active = isActive(href)
+                        return (
+                          <NavLink
+                            key={href}
+                            href={href}
+                            onClick={() => setMobileOpen(false)}
+                            className={[
+                              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 w-full',
+                              active
+                                ? themeClasses.active
+                                : 'text-white/90 hover:text-white hover:bg-white/20',
+                            ].join(' ')}
+                          >
+                            <Icon size={18} />
+                            <span>{label}</span>
+                          </NavLink>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Sección: Recursos */}
+                  <div>
+                    <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-2">
+                      Recursos
+                    </h3>
+                    <div className="space-y-1">
+                      {NAVIGATION_CONFIG.resources.items.map(({ href, label, Icon }) => {
+                        const active = isActive(href)
+                        return (
+                          <NavLink
+                            key={href}
+                            href={href}
+                            onClick={() => setMobileOpen(false)}
+                            className={[
+                              'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 w-full',
+                              active
+                                ? themeClasses.active
+                                : 'text-white/90 hover:text-white hover:bg-white/20',
+                            ].join(' ')}
+                          >
+                            <Icon size={18} />
+                            <span>{label}</span>
+                          </NavLink>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
               </nav>
 
-              {/* Sección Usuario en Móvil Mejorada */}
+              {/* Sección Usuario en Móvil */}
               <div className="border-t border-white/30 p-4 bg-black/20">
                 {user ? (
                   <div className="space-y-3">
-                    {/* Info Usuario Temática */}
+                    {/* Info Usuario */}
                     <div className="flex items-center gap-3 p-3 bg-white/20 rounded-lg backdrop-blur-sm border border-white/20">
                       {highlightImage ? (
                         <div className="w-10 h-10 rounded-lg overflow-hidden shadow-lg ring-2 ring-white/30">
@@ -784,7 +963,7 @@ export default function Navbar() {
                       </div>
                     </div>
 
-                    {/* Acciones Usuario Simplificadas */}
+                    {/* Acciones Usuario */}
                     <div className="space-y-2">
                       <button
                         onClick={handleProfileClick}
