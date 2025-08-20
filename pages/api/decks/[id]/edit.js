@@ -1,11 +1,11 @@
 // pages/decks/[id]/edit.js
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { supabase } from '../../../lib/supabaseClient'
+import { supabase } from '../../../../lib/supabaseClient'
 import Link from 'next/link'
-import Card from '../../../components/Card'
-import FramedArt from '../../../components/FramedArt'
-import { createServiceClient } from '../../../lib/supabaseServer'
+import Card from '../../../../components/Card'
+import FramedArt from '../../../../components/FramedArt'
+import { createServiceClient } from '../../../../lib/supabaseServer'
 
 export default function EditDeckPage({ deck: initialDeck, error: initialError }) {
   const router = useRouter()
