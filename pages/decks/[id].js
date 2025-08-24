@@ -16,40 +16,6 @@ import { translateTypeLine } from '../../lib/mtgTranslate'
 import useCardImage from "../../hooks/useCardImage"
 import { Copy, Check, X, FileText, Link2, List, ChevronDown, Download, Mail, Archive } from 'lucide-react'
 
-// COMPONENTES FALTANTES - Agregar después de los imports
-const Card = ({ children, className = "", padding = "md", ...props }) => {
-  const paddingClasses = {
-    sm: 'p-3',
-    md: 'p-4', 
-    lg: 'p-6',
-    xl: 'p-8'
-  }
-  return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${paddingClasses[padding]} ${className}`} {...props}>
-      {children}
-    </div>
-  )
-}
-
-const ManaSymbol = ({ symbol, size = "md" }) => {
-  const sizeClasses = {
-    sm: 'w-4 h-4',
-    md: 'w-6 h-6', 
-    lg: 'w-8 h-8'
-  }
-  const colorClasses = {
-    W: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    U: 'bg-blue-100 text-blue-800 border-blue-300',
-    B: 'bg-gray-800 text-white border-gray-600',
-    R: 'bg-red-100 text-red-800 border-red-300',
-    G: 'bg-green-100 text-green-800 border-green-300'
-  }
-  return (
-    <div className={`${sizeClasses[size]} rounded-full border-2 flex items-center justify-center font-bold text-xs ${colorClasses[symbol] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
-      {symbol}
-    </div>
-  )
-}
 
 /* ===============================================================
   TEMAS PROFESIONALES MEJORADOS CON NUEVAS ANIMACIONES
