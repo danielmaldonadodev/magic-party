@@ -1079,6 +1079,8 @@ function ProfessionalImageModal({
                 <img
                   src={imageUrl}
                   alt={card.name}
+                  width={400}
+                  height={560}
                   className={`
                     w-full h-auto rounded-lg
                     transition-opacity duration-300
