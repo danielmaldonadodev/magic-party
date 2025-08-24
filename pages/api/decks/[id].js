@@ -18,7 +18,7 @@ function getSupabaseFromReq(req) {
 }
 
 // Fallbacks de imagen con scryfall_id (si no hay URLs guardadas)
-function mapCardForFront(card) {
+function mapCardForFrontend(card) {
   const imgNormal = card.image_url || (card.scryfall_id
     ? `https://api.scryfall.com/cards/${card.scryfall_id}?format=image&version=normal`
     : null)
@@ -28,24 +28,42 @@ function mapCardForFront(card) {
     : null)
 
   return {
-    name: card.name,
-    scryfall_id: card.scryfall_id,
+    // ID interno
+    id: card.id,
+    
+    // Campos básicos de la carta
+    name: card.name || null,
+    scryfall_id: card.scryfall_id || null,
+    quantity: card.quantity || 1,
+    
+    // URLs de imagen con fallbacks
     image_url: imgNormal,
     image_url_small: imgSmall,
-    cmc: card.cmc,
-    colors: card.colors,
-    color_identity: card.color_identity,
-    type_line: card.type_line,
-    rarity: card.rarity,
-    set_code: card.set_code,
-    oracle_text: card.oracle_text,
-    power: card.power,
-    toughness: card.toughness,
-    loyalty: card.loyalty,
-    price_usd: card.price_usd,
-    price_eur: card.price_eur,
-    categories: card.categories,
-    // ⚠️ No incluimos mana_cost porque no existe en tu tabla deck_cards
+    
+    // Propiedades de juego
+    cmc: card.cmc || 0,
+    colors: card.colors || [],
+    color_identity: card.color_identity || [],
+    type_line: card.type_line || null,
+    rarity: card.rarity || null,
+    set_code: card.set_code || null,
+    oracle_text: card.oracle_text || null,
+    power: card.power || null,
+    toughness: card.toughness || null,
+    loyalty: card.loyalty || null,
+    
+    // Precios
+    price_usd: card.price_usd || null,
+    price_eur: card.price_eur || null,
+    
+    // Metadatos y categorización
+    categories: card.categories || [],
+    is_commander: Boolean(card.is_commander),
+    is_sideboard: Boolean(card.is_sideboard),
+    
+    // Timestamps
+    created_at: card.created_at || null,
+    updated_at: card.updated_at || null,
   }
 }
 
@@ -126,23 +144,13 @@ export default async function handler(req, res) {
         console.warn('⚠️ Error fetching cards:', cardsError)
       }
 
-      const mainboard = (cards || []).filter(c => !c.is_sideboard && !c.is_commander)
-      const sideboard = (cards || []).filter(c => c.is_sideboard)
-      const commanders = (cards || []).filter(c => c.is_commander)
+      // CORRECCIÓN: Usar estructura plana directamente
+      const deck_cards = (cards || []).map(card => mapCardForFrontend(card))
 
-      // 4) Adaptación al formato que usa el frontend (deck.deck_cards[].cards)
-      const deck_cards = [
-        ...mainboard.map(card => ({
-          quantity: card.quantity,
-          board_type: 'mainboard',
-          cards: mapCardForFront(card),
-        })),
-        ...sideboard.map(card => ({
-          quantity: card.quantity,
-          board_type: 'sideboard',
-          cards: mapCardForFront(card),
-        })),
-      ]
+      // Separaciones por conveniencia (para el objeto cards)
+      const mainboard = deck_cards.filter(c => !c.is_sideboard && !c.is_commander)
+      const sideboard = deck_cards.filter(c => c.is_sideboard)
+      const commanders = deck_cards.filter(c => c.is_commander)
 
       // 5) Estadísticas detalladas (si existe tabla)
       let statistics = null
@@ -176,7 +184,7 @@ export default async function handler(req, res) {
       const deckWithExtras = {
         ...deck,
         profiles: profile,
-        deck_cards, // forma legacy para el front actual
+        deck_cards, // Estructura plana que espera el frontend corregido
         cards: {
           mainboard,
           sideboard,

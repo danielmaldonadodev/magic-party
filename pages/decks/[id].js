@@ -14,6 +14,7 @@
   import ManaSymbol from '../../components/ManaSymbol'
   import { translateTypeLine } from '../../lib/mtgTranslate'
   import useCardImage from "../../hooks/useCardImage"
+  import { createPortal } from 'react-dom'
   import { Copy, Check, X, FileText, Link2, List, ChevronDown, Download, Mail, Archive } from 'lucide-react'
 
 
@@ -788,327 +789,358 @@
   /* ===============================================================
     COMPONENTE DE ITEM DE CARTA PROFESIONAL MEJORADO
     =============================================================== */
-  function ProfessionalCardListItem({ card, theme, onImageClick }) {
-    const translatedTypeLine = translateTypeLine(card.type_line)
+function ProfessionalCardListItem({ card, theme, onImageClick }) {
+  const translatedTypeLine = translateTypeLine(card.type_line)
 
-    const getTypeColor = (typeLine) => {
-      if (!typeLine) return 'bg-gray-50 text-gray-700 border-gray-200'
-      
-      const translatedType = translateTypeLine(typeLine)
-      
-      if (translatedType.includes('Tierra')) return 'bg-amber-50 text-amber-800 border-amber-200'
-      if (translatedType.includes('Criatura')) return 'bg-green-50 text-green-800 border-green-200'
-      if (translatedType.includes('Instantáneo')) return 'bg-blue-50 text-blue-800 border-blue-200'
-      if (translatedType.includes('Hechizo')) return 'bg-red-50 text-red-800 border-red-200'
-      if (translatedType.includes('Artefacto')) return 'bg-gray-50 text-gray-800 border-gray-200'
-      if (translatedType.includes('Encantamiento')) return 'bg-purple-50 text-purple-800 border-purple-200'
-      if (translatedType.includes('Caminante de Planos')) return 'bg-indigo-50 text-indigo-800 border-indigo-200'
-      
-      return 'bg-gray-50 text-gray-700 border-gray-200'
-    }
+  const getTypeColor = (typeLine) => {
+    if (!typeLine) return 'bg-gray-50 text-gray-700 border-gray-200'
+    
+    const translatedType = translateTypeLine(typeLine)
+    
+    if (translatedType.includes('Tierra')) return 'bg-amber-50 text-amber-800 border-amber-200'
+    if (translatedType.includes('Criatura')) return 'bg-green-50 text-green-800 border-green-200'
+    if (translatedType.includes('Instantáneo')) return 'bg-blue-50 text-blue-800 border-blue-200'
+    if (translatedType.includes('Hechizo')) return 'bg-red-50 text-red-800 border-red-200'
+    if (translatedType.includes('Artefacto')) return 'bg-gray-50 text-gray-800 border-gray-200'
+    if (translatedType.includes('Encantamiento')) return 'bg-purple-50 text-purple-800 border-purple-200'
+    if (translatedType.includes('Caminante de Planos')) return 'bg-indigo-50 text-indigo-800 border-indigo-200'
+    
+    return 'bg-gray-50 text-gray-700 border-gray-200'
+  }
 
-    return (
-      <div className="group relative crystal-card mobile-optimized">
-        <div className="
-          bg-white/95 backdrop-blur-sm border border-white/60 shadow-md 
-          hover:shadow-xl hover:bg-white transition-all duration-300 
-          flex items-center gap-4 p-4 sm:p-5 rounded-xl
-          hover:border-gray-200
-        ">
-          {/* Badge de cantidad MEJORADO - más prominente */}
-          <div className="flex-shrink-0 relative">
-            <div className="
-              w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 
-              rounded-2xl flex items-center justify-center shadow-xl border-2 border-white
-              animate-float-subtle relative overflow-hidden
-            ">
-              {/* Efecto de brillo en el badge */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-2xl" />
-              
-              <div className="relative text-center">
-                <div className="text-lg sm:text-xl font-black text-white drop-shadow-sm">
-                  {card.quantity || 1}
-                </div>
-                <div className="text-xs font-bold text-blue-100 opacity-90 -mt-1">
-                  {card.quantity === 1 ? 'copia' : 'copias'}
-                </div>
+  return (
+    <div className="group relative crystal-card mobile-optimized">
+      <div className="
+        bg-white/95 backdrop-blur-sm border border-white/60 shadow-md 
+        hover:shadow-xl hover:bg-white transition-all duration-300 
+        flex items-center gap-4 p-4 sm:p-5 rounded-xl
+        hover:border-gray-200
+      ">
+        {/* Badge de cantidad */}
+        <div className="flex-shrink-0 relative">
+          <div className="
+            w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 
+            rounded-2xl flex items-center justify-center shadow-xl border-2 border-white
+            animate-float-subtle relative overflow-hidden
+          ">
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-2xl" />
+            <div className="relative text-center">
+              <div className="text-lg sm:text-xl font-black text-white drop-shadow-sm">
+                {card.quantity || 1}
               </div>
-            </div>
-            
-            {/* Indicador de rareza mejorado */}
-            {card.rarity && (
-              <div className={`
-                absolute -top-2 -right-2 w-6 h-6 rounded-full border-2 border-white shadow-lg
-                flex items-center justify-center text-xs font-bold text-white
-                ${card.rarity === 'mythic' ? 'bg-gradient-to-br from-orange-400 to-red-500' :
-                  card.rarity === 'rare' ? 'bg-gradient-to-br from-yellow-400 to-orange-500' :
-                  card.rarity === 'uncommon' ? 'bg-gradient-to-br from-gray-400 to-gray-500' : 
-                  'bg-gradient-to-br from-gray-300 to-gray-400'}
-              `} title={`Rareza: ${card.rarity}`}>
-                {card.rarity === 'mythic' ? 'M' :
-                card.rarity === 'rare' ? 'R' :
-                card.rarity === 'uncommon' ? 'U' : 'C'}
-              </div>
-            )}
-          </div>
-
-          {/* Miniatura de carta */}
-          <ProfessionalCardThumbnail 
-            card={card}
-            onImageClick={onImageClick}
-            size="default"
-          />
-
-          {/* Información de la carta - sin coste de maná */}
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col gap-3">
-              <div className="flex-1 min-w-0">
-                {/* Nombre de la carta */}
-                <h4 className="font-bold text-gray-900 text-base sm:text-lg mb-3 group-hover:text-blue-700 transition-colors">
-                  {card.name}
-                </h4>
-                
-                {/* Chips de información mejorados */}
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  {/* Tipo */}
-                  {card.type_line && (
-                    <span className={`
-                      px-3 py-1.5 rounded-full text-xs font-semibold border shadow-sm
-                      ${getTypeColor(card.type_line)}
-                      transition-all duration-200 hover:scale-105
-                    `}>
-                      {translatedTypeLine}
-                    </span>
-                  )}
-                  
-                  {/* CMC */}
-                  {card.cmc !== undefined && (
-                    <span className="
-                      text-xs font-bold bg-gradient-to-r from-gray-100 to-gray-200 
-                      border border-gray-300 px-3 py-1.5 rounded-full text-gray-700
-                      hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-sm
-                    ">
-                      CMC {card.cmc}
-                    </span>
-                  )}
-
-                  {/* Poder/Resistencia para criaturas - mejorado */}
-                  {card.power && card.toughness && (
-                    <span className="
-                      text-xs font-bold bg-gradient-to-r from-green-100 to-emerald-200
-                      border border-green-300 px-3 py-1.5 rounded-full text-green-800
-                      hover:from-green-200 hover:to-emerald-300 transition-all duration-200 shadow-sm
-                    ">
-                      {card.power}/{card.toughness}
-                    </span>
-                  )}
-                </div>
-
-                {/* Texto de la carta (truncado) si está disponible */}
-                {card.oracle_text && (
-                  <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed bg-gray-50 p-2 rounded border">
-                    {card.oracle_text}
-                  </p>
-                )}
+              <div className="text-xs font-bold text-blue-100 opacity-90 -mt-1">
+                {card.quantity === 1 ? 'copia' : 'copias'}
               </div>
             </div>
           </div>
 
-          {/* Enlace a Scryfall mejorado */}
-          {card.scryfall_id && (
-            <div className="flex-shrink-0">
-              <div className="
-                opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
-                transition-opacity duration-300
-              ">
-                <a
-                  href={`https://scryfall.com/card/${card.scryfall_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="
-                    inline-flex items-center justify-center w-12 h-12 
-                    bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300
-                    rounded-xl text-gray-600 hover:text-gray-800 
-                    transition-all duration-200 hover:scale-110 shadow-md
-                    focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:outline-none
-                    border border-gray-300
-                  "
-                  title="Ver en Scryfall"
-                  aria-label={`Ver ${card.name} en Scryfall`}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
-                    />
-                  </svg>
-                </a>
-              </div>
+          {/* Indicador de rareza */}
+          {card.rarity && (
+            <div className={`
+              absolute -top-2 -right-2 w-6 h-6 rounded-full border-2 border-white shadow-lg
+              flex items-center justify-center text-xs font-bold text-white
+              ${card.rarity === 'mythic' ? 'bg-gradient-to-br from-orange-400 to-red-500' :
+                card.rarity === 'rare' ? 'bg-gradient-to-br from-yellow-400 to-orange-500' :
+                card.rarity === 'uncommon' ? 'bg-gradient-to-br from-gray-400 to-gray-500' : 
+                'bg-gradient-to-br from-gray-300 to-gray-400'}
+            `} title={`Rareza: ${card.rarity}`}>
+              {card.rarity === 'mythic' ? 'M' :
+              card.rarity === 'rare' ? 'R' :
+              card.rarity === 'uncommon' ? 'U' : 'C'}
             </div>
           )}
         </div>
+
+        {/* Miniatura de carta */}
+        <ProfessionalCardThumbnail 
+          card={card}
+          onImageClick={onImageClick}
+          size="default"
+        />
+
+        {/* Información de la carta */}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col gap-3">
+            <div className="flex-1 min-w-0">
+              {/* Nombre */}
+              <h4 className="font-bold text-gray-900 text-base sm:text-lg mb-3 group-hover:text-blue-700 transition-colors">
+                {card.name}
+              </h4>
+              
+              {/* Chips */}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {/* Tipo */}
+                {card.type_line && (
+                  <span className={`
+                    px-3 py-1.5 rounded-full text-xs font-semibold border shadow-sm
+                    ${getTypeColor(card.type_line)}
+                    transition-all duration-200 hover:scale-105
+                  `}>
+                    {translatedTypeLine}
+                  </span>
+                )}
+                
+                {/* CMC */}
+                {card.cmc !== undefined && (
+                  <span className="
+                    text-xs font-bold bg-gradient-to-r from-gray-100 to-gray-200 
+                    border border-gray-300 px-3 py-1.5 rounded-full text-gray-700
+                    hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-sm
+                  ">
+                    CMC {card.cmc}
+                  </span>
+                )}
+
+                {/* P/T */}
+                {card.power && card.toughness && (
+                  <span className="
+                    text-xs font-bold bg-gradient-to-r from-green-100 to-emerald-200
+                    border border-green-300 px-3 py-1.5 rounded-full text-green-800
+                    hover:from-green-200 hover:to-emerald-300 transition-all duration-200 shadow-sm
+                  ">
+                    {card.power}/{card.toughness}
+                  </span>
+                )}
+              </div>
+
+              {/* Oracle text — caja ampliada con scroll si hace falta */}
+              {card.oracle_text && (
+                <p
+                  className="
+                    text-sm text-gray-700 leading-relaxed
+                    bg-gray-50 p-3 rounded-lg border border-gray-200
+                    max-h-48 sm:max-h-60 xl:max-h-72 overflow-y-auto
+                    whitespace-pre-line
+                  "
+                  title={card.oracle_text}
+                >
+                  {card.oracle_text}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Enlace a Scryfall */}
+        {card.scryfall_id && (
+          <div className="flex-shrink-0">
+            <div className="
+              opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
+              transition-opacity duration-300
+            ">
+              <a
+                href={`https://scryfall.com/card/${card.scryfall_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="
+                  inline-flex items-center justify-center w-12 h-12 
+                  bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300
+                  rounded-xl text-gray-600 hover:text-gray-800 
+                  transition-all duration-200 hover:scale-110 shadow-md
+                  focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:outline-none
+                  border border-gray-300
+                "
+                title="Ver en Scryfall"
+                aria-label={`Ver ${card.name} en Scryfall`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                  />
+                </svg>
+              </a>
+            </div>
+          </div>
+        )}
       </div>
-    )
-  }
+    </div>
+  )
+}
+
 
   /* ===============================================================
     MODAL DE IMAGEN ÚNICO Y CENTRALIZADO
     =============================================================== */
   // Reemplaza tu función ProfessionalImageModal completa con esta:
-  function ProfessionalImageModal({ 
-    isOpen, 
-    card, 
-    onClose, 
-    imageLoaded, 
-    setImageLoaded, 
-    imageError, 
-    setImageError,
-    theme 
-  }) {
-    const [isClosing, setIsClosing] = useState(false)
-    
-    useEffect(() => {
-      if (isOpen) {
-        document.body.style.overflow = 'hidden'
-      } else {
-        document.body.style.overflow = 'unset'
-      }
-      
+function ProfessionalImageModal({ 
+  isOpen, 
+  card, 
+  onClose, 
+  imageLoaded, 
+  setImageLoaded, 
+  imageError, 
+  setImageError,
+  theme 
+}) {
+  // Estado de cierre animado + guardia de montaje para SSR
+  const [isClosing, setIsClosing] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  // Bloquear scroll del body mientras el modal esté abierto
+  useEffect(() => {
+    if (!mounted) return
+    if (isOpen) {
+      const { scrollY } = window
+      document.body.style.overflow = 'hidden'
+      // Evita “saltar” al cerrar en iOS/Safari
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
       return () => {
-        document.body.style.overflow = 'unset'
-      }
-    }, [isOpen])
-    
-    if (!isOpen || !card) return null
-
-    const handleClose = () => {
-      setIsClosing(true)
-      setTimeout(() => {
-        onClose()
-        setIsClosing(false)
-      }, 200)
-    }
-
-    const handleBackdropClick = (e) => {
-      if (e.target === e.currentTarget) {
-        handleClose()
+        const top = document.body.style.top
+        document.body.style.overflow = ''
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.width = ''
+        // Restaurar scroll
+        window.scrollTo(0, top ? -parseInt(top, 10) : 0)
       }
     }
+  }, [isOpen, mounted])
 
-    // Obtener URL de imagen completa
-    const getFullImageUrl = () => {
-      // Primero intentar con las URLs que ya tiene la carta
-      if (card.image_uris?.normal) return card.image_uris.normal
-      if (card.image_uris?.large) return card.image_uris.large
-      if (card.image_uris?.png) return card.image_uris.png
-      
-      // Si no hay image_uris pero hay scryfall_id
-      if (card.scryfall_id) {
-        return `https://api.scryfall.com/cards/${card.scryfall_id}?format=image&version=normal`
-      }
-      
-      // Fallback a placeholder
-      return null
+  // Cerrar con ESC
+  useEffect(() => {
+    if (!isOpen || !mounted) return
+    const onKeyDown = (e) => { if (e.key === 'Escape') handleClose() }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [isOpen, mounted])
+
+  if (!mounted || !isOpen || !card) return null
+
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      onClose()
+      setIsClosing(false)
+    }, 200)
+  }
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      handleClose()
     }
+  }
 
-    const imageUrl = getFullImageUrl()
+  // Obtener URL de imagen completa
+  const getFullImageUrl = () => {
+    if (card.image_uris?.normal) return card.image_uris.normal
+    if (card.image_uris?.large) return card.image_uris.large
+    if (card.image_uris?.png) return card.image_uris.png
+    if (card.scryfall_id) {
+      return `https://api.scryfall.com/cards/${card.scryfall_id}?format=image&version=normal`
+    }
+    return null
+  }
 
-    return (
-      <div 
+  const imageUrl = getFullImageUrl()
+
+  // PORTAL: renderizamos el modal directamente en <body> para evitar quedar “encerrado” en contenedores con transform/overflow
+  return createPortal(
+    <div 
+      id="global-image-modal"
+      className={`
+        fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm 
+        flex items-center justify-center p-4
+        transition-opacity duration-200
+        ${isClosing ? 'opacity-0' : 'opacity-100'}
+      `}
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Imagen de ${card.name}`}
+    >
+      <div
         className={`
-          fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm 
-          flex items-center justify-center p-4
-          transition-opacity duration-200
-          ${isClosing ? 'opacity-0' : 'opacity-100'}
-        `}
-        onClick={handleBackdropClick}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Imagen de ${card.name}`}
-      >
-        <div className={`
           relative max-w-sm sm:max-w-md lg:max-w-lg max-h-[90vh]
           transform transition-all duration-200
           ${isClosing ? 'scale-95' : 'scale-100'}
-        `}>
-          {/* Botón de cierre */}
-          <button
-            onClick={handleClose}
-            className="
-              absolute -top-12 right-0 z-10 w-10 h-10 
-              bg-white/20 hover:bg-white/30 backdrop-blur-sm 
-              text-white rounded-full flex items-center justify-center 
-              transition-all duration-200 hover:scale-110 hover:rotate-90
-              focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none
-            "
-            aria-label="Cerrar imagen"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          
-          {/* Contenedor de la imagen */}
-          <div className="bg-white rounded-xl shadow-2xl p-2 overflow-hidden">
-            {imageUrl ? (
-              <>
-                {/* Loading state */}
-                {!imageLoaded && !imageError && (
-                  <div className="w-full aspect-[488/680] bg-gray-100 rounded-lg flex items-center justify-center">
-                    <div className="loading-skeleton w-full h-full rounded-lg"></div>
-                  </div>
-                )}
-                
-                {/* Error state */}
-                {imageError && (
-                  <div className="w-full aspect-[488/680] bg-gray-50 rounded-lg flex items-center justify-center">
-                    <div className="text-center p-8">
-                      <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-gray-600 font-semibold">{card.name}</p>
-                      <p className="text-sm text-gray-500 mt-1">Imagen no disponible</p>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Imagen */}
-                {!imageError && (
-                  <img
-                    src={imageUrl}
-                    alt={card.name}
-                    width={400}
-                    height={560}
-                    className={`
-                      w-full h-auto rounded-lg
-                      transition-opacity duration-300
-                      ${imageLoaded ? 'opacity-100' : 'opacity-0 absolute'}
-                    `}
-                    onLoad={() => setImageLoaded(true)}
-                    onError={() => setImageError(true)}
-                    style={{ maxHeight: '85vh' }}
-                  />
-                )}
-              </>
-            ) : (
-              // No image available
-              <div className="w-full aspect-[488/680] bg-gray-50 rounded-lg flex items-center justify-center">
-                <div className="text-center p-8">
-                  <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-gray-600 font-semibold">{card.name}</p>
-                  <p className="text-sm text-gray-500 mt-1">Sin imagen disponible</p>
+        `}
+      >
+        {/* Botón de cierre */}
+        <button
+          onClick={handleClose}
+          className="
+            absolute -top-12 right-0 z-10 w-10 h-10 
+            bg-white/20 hover:bg-white/30 backdrop-blur-sm 
+            text-white rounded-full flex items-center justify-center 
+            transition-all duration-200 hover:scale-110 hover:rotate-90
+            focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none
+          "
+          aria-label="Cerrar imagen"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        
+        {/* Contenedor de la imagen */}
+        <div className="bg-white rounded-xl shadow-2xl p-2 overflow-hidden">
+          {imageUrl ? (
+            <>
+              {/* Loading state */}
+              {!imageLoaded && !imageError && (
+                <div className="w-full aspect-[488/680] bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="loading-skeleton w-full h-full rounded-lg"></div>
                 </div>
+              )}
+              
+              {/* Error state */}
+              {imageError && (
+                <div className="w-full aspect-[488/680] bg-gray-50 rounded-lg flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-gray-600 font-semibold">{card.name}</p>
+                    <p className="text-sm text-gray-500 mt-1">Imagen no disponible</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Imagen */}
+              {!imageError && (
+                <img
+                  src={imageUrl}
+                  alt={card.name}
+                  width={400}
+                  height={560}
+                  className={`
+                    w-full h-auto rounded-lg
+                    transition-opacity duration-300
+                    ${imageLoaded ? 'opacity-100' : 'opacity-0 absolute'}
+                  `}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => setImageError(true)}
+                  style={{ maxHeight: '85vh' }}
+                />
+              )}
+            </>
+          ) : (
+            // No image available
+            <div className="w-full aspect-[488/680] bg-gray-50 rounded-lg flex items-center justify-center">
+              <div className="text-center p-8">
+                <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-gray-600 font-semibold">{card.name}</p>
+                <p className="text-sm text-gray-500 mt-1">Sin imagen disponible</p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
-    )
-  }
+    </div>,
+    // Montamos en el body para que siempre ocupe toda la ventana
+    document.body
+  )
+}
+
   /* ===============================================================
     LISTA DE CARTAS MEJORADA CON MODAL ÚNICO
     =============================================================== */
@@ -1567,123 +1599,113 @@
     COMPONENTE CTA DE EXPORTACIÓN MEJORADO
     =============================================================== */
   // Reemplaza tu componente ExportDeckCTA completo con esta versión más simple:
-  function ExportDeckCTA({ theme, deck }) {
-    const [copied, setCopied] = useState(false)
-    const [format, setFormat] = useState('arena') // Podrías agregar un selector si quieres
+function ExportDeckCTA({ theme, deck }) {
+  const [copied, setCopied] = useState(false)
+  
+  const allCards = useMemo(() => {
+    if (!deck.deck_cards) return []
+    // CORREGIDO: Ahora deck_cards ya tiene la estructura plana
+    return deck.deck_cards
+  }, [deck.deck_cards])
+
+  const cardCount = useMemo(() => {
+    return allCards.reduce((sum, card) => sum + (card.quantity || 1), 0)
+  }, [allCards])
+
+  const handleExport = async () => {
+    // CORREGIDO: Usar is_sideboard en lugar de board_type
+    const mainboard = allCards.filter(c => !c.is_sideboard && !c.is_commander)
+    const sideboard = allCards.filter(c => c.is_sideboard)
     
-    const allCards = useMemo(() => {
-      if (!deck.deck_cards) return []
-      return deck.deck_cards.map(dc => ({ 
-        ...dc.cards, 
-        quantity: dc.quantity, 
-        board_type: dc.board_type 
-      }))
-    }, [deck.deck_cards])
-
-    const cardCount = useMemo(() => {
-      return allCards.reduce((sum, card) => sum + (card.quantity || 1), 0)
-    }, [allCards])
-
-    const handleExport = async () => {
-      // Generar el texto para exportar (formato Arena por defecto)
-      const mainboard = allCards.filter(c => c.board_type !== 'sideboard')
-      const sideboard = allCards.filter(c => c.board_type === 'sideboard')
-      
-      let exportText = mainboard.map(c => `${c.quantity || 1} ${c.name}`).join('\n')
-      
-      if (sideboard.length > 0) {
-        exportText += '\n\nSideboard\n'
-        exportText += sideboard.map(c => `${c.quantity || 1} ${c.name}`).join('\n')
-      }
-
-      try {
-        await navigator.clipboard.writeText(exportText)
-        setCopied(true)
-        
-        // Resetear el estado después de 3 segundos
-        setTimeout(() => {
-          setCopied(false)
-        }, 3000)
-      } catch (err) {
-        // Fallback para navegadores antiguos
-        const textarea = document.createElement('textarea')
-        textarea.value = exportText
-        textarea.style.position = 'fixed'
-        textarea.style.opacity = '0'
-        document.body.appendChild(textarea)
-        textarea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
-        
-        setCopied(true)
-        setTimeout(() => {
-          setCopied(false)
-        }, 3000)
-      }
+    let exportText = mainboard.map(c => `${c.quantity || 1} ${c.name}`).join('\n')
+    
+    if (sideboard.length > 0) {
+      exportText += '\n\nSideboard\n'
+      exportText += sideboard.map(c => `${c.quantity || 1} ${c.name}`).join('\n')
     }
 
-    return (
-      <>
-        <div className="flex items-center justify-between gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg animate-float-subtle">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div>
-              <div className="font-semibold text-gray-900">Exportar Lista del Mazo</div>
-              <div className="text-xs text-gray-600">
-                {cardCount} cartas • Formato MTG Arena
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={handleExport}
-            disabled={!allCards.length}
-            className={`
-              inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold 
-              transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 
-              focus-visible:ring-offset-2 
-              ${copied 
-                ? 'bg-green-500 text-white shadow-lg' 
-                : `bg-gradient-to-r ${theme.colors.primary} text-white hover:shadow-lg hover:scale-105 ${theme.colors.ring}`
-              }
-              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-            `}
-          >
-            {copied ? (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                ¡Copiado!
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copiar lista
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Notificación flotante de éxito (opcional - aparece arriba a la derecha) */}
-        {copied && (
-          <div className="fixed top-4 right-4 z-50 animate-professional-fade-in">
-            <div className="bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="font-semibold">Lista del mazo copiada al portapapeles</span>
-            </div>
-          </div>
-        )}
-      </>
-    )
+    try {
+      await navigator.clipboard.writeText(exportText)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 3000)
+    } catch (err) {
+      // Fallback para navegadores antiguos
+      const textarea = document.createElement('textarea')
+      textarea.value = exportText
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      
+      setCopied(true)
+      setTimeout(() => setCopied(false), 3000)
+    }
   }
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg animate-float-subtle">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900">Exportar Lista del Mazo</div>
+            <div className="text-xs text-gray-600">
+              {cardCount} cartas • Formato MTG Arena
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={handleExport}
+          disabled={!allCards.length}
+          className={`
+            inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold 
+            transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 
+            focus-visible:ring-offset-2 
+            ${copied 
+              ? 'bg-green-500 text-white shadow-lg' 
+              : `bg-gradient-to-r ${theme.colors.primary} text-white hover:shadow-lg hover:scale-105 ${theme.colors.ring}`
+            }
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+          `}
+        >
+          {copied ? (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              ¡Copiado!
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Copiar lista
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Notificación flotante de éxito */}
+      {copied && (
+        <div className="fixed top-4 right-4 z-50 animate-professional-fade-in">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-semibold">Lista del mazo copiada al portapapeles</span>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
 
   // Función auxiliar para construir el texto del mazo
   function buildDeckText(cards, format) {
@@ -2220,12 +2242,10 @@
     COMPONENTE DE ESTADÍSTICAS MEJORADO CON VISUALIZACIÓN AVANZADA
     =============================================================== */
 function ProfessionalDeckStats({ theme, deck }) {
-  // TODOS LOS HOOKS DEBEN IR ANTES DE CUALQUIER RETURN CONDICIONAL
-  
-  // Calcular mainboard ANTES del useMemo
+  // CORREGIDO: Ahora deck.deck_cards es estructura plana, no anidada
   const mainboard = useMemo(() => {
     if (!deck.deck_cards || deck.deck_cards.length === 0) return []
-    return deck.deck_cards.filter(dc => dc.board_type === 'mainboard')
+    return deck.deck_cards.filter(card => !card.is_sideboard && !card.is_commander)
   }, [deck.deck_cards])
 
   // Calcular estadísticas con useMemo
@@ -2250,14 +2270,13 @@ function ProfessionalDeckStats({ theme, deck }) {
     const colorDistribution = {}
     const rarityDistribution = {}
     let totalManaCost = 0
-    let nonLandCardCount = 0 // Solo para CMC promedio
+    let nonLandCardCount = 0
     let creatureCount = 0
     let nonCreatureCount = 0
     let landCount = 0
 
-    mainboard.forEach(deckCard => {
-      const card = deckCard.cards
-      const quantity = deckCard.quantity || 1
+    mainboard.forEach(card => {
+      const quantity = card.quantity || 1
       const cmc = card.cmc || 0
       
       // CMC Distribution
@@ -2269,9 +2288,7 @@ function ProfessionalDeckStats({ theme, deck }) {
       if (typeLine.includes('Land')) {
         mainType = 'Tierra'
         landCount += quantity
-        // NO añadir tierras al cálculo de CMC promedio
       } else {
-        // Solo cartas no-tierra cuentan para CMC promedio
         totalManaCost += cmc * quantity
         nonLandCardCount += quantity
         
@@ -2315,8 +2332,7 @@ function ProfessionalDeckStats({ theme, deck }) {
       }
     })
 
-    const totalCards = mainboard.reduce((sum, dc) => sum + (dc.quantity || 1), 0)
-    // CMC promedio solo de cartas no-tierra
+    const totalCards = mainboard.reduce((sum, card) => sum + (card.quantity || 1), 0)
     const avgCmc = nonLandCardCount > 0 ? (totalManaCost / nonLandCardCount).toFixed(2) : '0.00'
 
     return { 
@@ -2329,11 +2345,11 @@ function ProfessionalDeckStats({ theme, deck }) {
       nonCreatureCount, 
       landCount,
       totalCards,
-      nonLandCardCount // Para mostrar en tooltip
+      nonLandCardCount
     }
   }, [mainboard])
 
-  // AHORA SÍ PODEMOS HACER LOS RETURNS CONDICIONALES
+  // RETURN CONDICIONAL TEMPRANO
   if (!deck.deck_cards || deck.deck_cards.length === 0) {
     if (deck.total_cards > 0) {
       return (
@@ -2459,18 +2475,18 @@ function ProfessionalDeckStats({ theme, deck }) {
             theme={theme}
           />
           <StatCard
-              title="CMC Promedio"
-              value={stats.avgCmc}
-              subtitle={`Exc. tierras (${stats.nonLandCardCount})`}
-              icon={(
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              )}
-              color="orange"
-              theme={theme}
-              isDecimal={true}
-  />
+            title="CMC Promedio"
+            value={stats.avgCmc}
+            subtitle={`Exc. tierras (${stats.nonLandCardCount})`}
+            icon={(
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            )}
+            color="orange"
+            theme={theme}
+            isDecimal={true}
+          />
         </div>
 
         {/* Charts Grid */}
@@ -2486,7 +2502,7 @@ function ProfessionalDeckStats({ theme, deck }) {
             <div className="space-y-3">
               {Object.entries(stats.cmcDistribution)
                 .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                .slice(0, 8) // Limitar a CMC 0-7 para visualización
+                .slice(0, 8)
                 .map(([cmc, count]) => {
                   const percentage = stats.totalCards > 0 ? (count / stats.totalCards) * 100 : 0
                   return (
@@ -2945,104 +2961,91 @@ function ProfessionalDeckStats({ theme, deck }) {
   /* ===============================================================
     COMPONENTE PRINCIPAL DE CARTAS DEL MAZO INTEGRADO
     =============================================================== */
-  function ProfessionalDeckCards({ theme, deck }) {
-    const {
-      isOpen: isModalOpen,
-      currentCard: modalCard,
-      imageLoaded,
-      setImageLoaded,
-      imageError,
-      setImageError,
-      openModal,
-      closeModal
-    } = useImageModal()
+function ProfessionalDeckCards({ theme, deck }) {
+  const {
+    isOpen: isModalOpen,
+    currentCard: modalCard,
+    imageLoaded,
+    setImageLoaded,
+    imageError,
+    setImageError,
+    openModal,
+    closeModal
+  } = useImageModal()
 
-    if (!deck.deck_cards || deck.deck_cards.length === 0) {
-      return (
-        <div 
-          className="crystal-card animate-professional-fade-in"
-          style={{ '--glow-color': theme.colors.glowColor }}
-        >
-          <Card className="relative overflow-hidden bg-white/90 backdrop-blur-sm border-2 border-white/50 shadow-lg hover:shadow-xl transition-all duration-500" padding="lg">
-            <ProfessionalEmptyState
-              theme={theme}
-              title="No hay cartas disponibles"
-              description="Este mazo no tiene cartas importadas o solo contiene metadatos básicos. Intenta sincronizar con la fuente externa para importar las cartas."
-              icon={(
-                <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-              )}
-            />
-          </Card>
-        </div>
-      )
-    }
-
-    // Separar mainboard y sideboard
-    const mainboardCards = deck.deck_cards
-      .filter(dc => dc.board_type === 'mainboard')
-      .map(dc => ({
-        ...dc.cards,
-        quantity: dc.quantity,
-        board_type: dc.board_type
-      }))
-
-    const sideboardCards = deck.deck_cards
-      .filter(dc => dc.board_type === 'sideboard')
-      .map(dc => ({
-        ...dc.cards,
-        quantity: dc.quantity,
-        board_type: dc.board_type
-      }))
-
-    // Calcular totales
-    const mainboardTotal = mainboardCards.reduce((sum, card) => sum + card.quantity, 0)
-    const sideboardTotal = sideboardCards.reduce((sum, card) => sum + card.quantity, 0)
-
+  if (!deck.deck_cards || deck.deck_cards.length === 0) {
     return (
-      <>
-        <div className="space-y-8">
-          {/* Estadísticas del mazo */}
-          <ProfessionalDeckStats theme={theme} deck={deck} />
-
-          {/* Mainboard */}
-          {mainboardCards.length > 0 && (
-            <ProfessionalCardList
-              theme={theme}
-              cards={mainboardCards}
-              title="Mainboard"
-              totalCount={mainboardTotal}
-              uniqueCount={mainboardCards.length}
-            />
-          )}
-
-          {/* Sideboard */}
-          {sideboardCards.length > 0 && (
-            <ProfessionalCardList
-              theme={theme}
-              cards={sideboardCards}
-              title="Sideboard"
-              totalCount={sideboardTotal}
-              uniqueCount={sideboardCards.length}
-            />
-          )}
-        </div>
-
-        {/* Modal único centralizado */}
-        <ProfessionalImageModal
-          isOpen={isModalOpen}
-          card={modalCard}
-          onClose={closeModal}
-          imageLoaded={imageLoaded}
-          setImageLoaded={setImageLoaded}
-          imageError={imageError}
-          setImageError={setImageError}
-          theme={theme}
-        />
-      </>
+      <div 
+        className="crystal-card animate-professional-fade-in"
+        style={{ '--glow-color': theme.colors.glowColor }}
+      >
+        <Card className="relative overflow-hidden bg-white/90 backdrop-blur-sm border-2 border-white/50 shadow-lg hover:shadow-xl transition-all duration-500" padding="lg">
+          <ProfessionalEmptyState
+            theme={theme}
+            title="No hay cartas disponibles"
+            description="Este mazo no tiene cartas importadas o solo contiene metadatos básicos. Intenta sincronizar con la fuente externa para importar las cartas."
+            icon={(
+              <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            )}
+          />
+        </Card>
+      </div>
     )
   }
+
+  // CORREGIDO: Trabajar directamente con la estructura plana
+  const mainboardCards = deck.deck_cards.filter(card => !card.is_sideboard && !card.is_commander)
+  const sideboardCards = deck.deck_cards.filter(card => card.is_sideboard)
+
+  // Calcular totales
+  const mainboardTotal = mainboardCards.reduce((sum, card) => sum + (card.quantity || 1), 0)
+  const sideboardTotal = sideboardCards.reduce((sum, card) => sum + (card.quantity || 1), 0)
+
+  return (
+    <>
+      <div className="space-y-8">
+        {/* Estadísticas del mazo */}
+        <ProfessionalDeckStats theme={theme} deck={deck} />
+
+        {/* Mainboard */}
+        {mainboardCards.length > 0 && (
+          <ProfessionalCardList
+            theme={theme}
+            cards={mainboardCards}
+            title="Mainboard"
+            totalCount={mainboardTotal}
+            uniqueCount={mainboardCards.length}
+          />
+        )}
+
+        {/* Sideboard */}
+        {sideboardCards.length > 0 && (
+          <ProfessionalCardList
+            theme={theme}
+            cards={sideboardCards}
+            title="Sideboard"
+            totalCount={sideboardTotal}
+            uniqueCount={sideboardCards.length}
+          />
+        )}
+      </div>
+
+      {/* Modal único centralizado */}
+      <ProfessionalImageModal
+        isOpen={isModalOpen}
+        card={modalCard}
+        onClose={closeModal}
+        imageLoaded={imageLoaded}
+        setImageLoaded={setImageLoaded}
+        imageError={imageError}
+        setImageError={setImageError}
+        theme={theme}
+      />
+    </>
+  )
+}
 
   /* ===============================================================
     COMPONENTE DE INFORMACIÓN MEJORADO
@@ -3522,131 +3525,64 @@ function ProfessionalDeckStats({ theme, deck }) {
   /* ===============================================================
     COMPONENTE PRINCIPAL INTEGRADO - VERSION FINAL
     =============================================================== */
-  export default function EnhancedProfessionalDeckDetailPage() {
-    const { theme, index: themeIndex, isPaused, togglePause } = useThemeRotation(40000)
-    const router = useRouter()
-    const { id } = router.query
-    const [user, setUser] = useState(null)
-    const { syncDeck, deleteDeck, loading: actionLoading, error: actionError } = useDeckActions()
-    const [deck, setDeck] = useState(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
-    const [syncing, setSyncing] = useState(false)
-    const [syncStatus, setSyncStatus] = useState(null)
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+export default function EnhancedProfessionalDeckDetailPage() {
+  const { theme, index: themeIndex, isPaused, togglePause } = useThemeRotation(40000)
+  const router = useRouter()
+  const { id } = router.query
+  const [user, setUser] = useState(null)
+  const { syncDeck, deleteDeck, loading: actionLoading, error: actionError } = useDeckActions()
+  const [deck, setDeck] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [syncing, setSyncing] = useState(false)
+  const [syncStatus, setSyncStatus] = useState(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-    // Autenticación de usuario
-    useEffect(() => {
-      let mounted = true
-      ;(async () => {
-        try {
-          const { data } = await supabase.auth.getUser()
-          if (mounted) setUser(data.user || null)
-        } catch (error) {
-          console.error('Error getting user:', error)
-          if (mounted) setUser(null)
-        }
-      })()
-      
-      const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-        if (mounted) setUser(session?.user || null)
-      })
-      
-      return () => {
-        mounted = false
-        sub?.subscription?.unsubscribe?.()
-      }
-    }, [])
+  // CORREGIDO: Hook centralizado para el modal único - DEBE IR AQUÍ EN EL COMPONENTE PRINCIPAL
+  const {
+    isOpen: isModalOpen,
+    currentCard: modalCard,
+    imageLoaded,
+    setImageLoaded,
+    imageError,
+    setImageError,
+    openModal,
+    closeModal
+  } = useImageModal()
 
-    // Obtener datos del mazo
-    useEffect(() => {
-      if (!id) return
-
-      const fetchDeck = async () => {
-        try {
-          const { data: session } = await supabase.auth.getSession()
-          const headers = {
-            'Content-Type': 'application/json'
-          }
-          
-          if (session.session?.access_token) {
-            headers.Authorization = `Bearer ${session.session.access_token}`
-          }
-
-          const response = await fetch(`/api/decks/${id}`, { headers })
-          
-          if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.error || 'Mazo no encontrado')
-          }
-
-          const data = await response.json()
-          setDeck(data.deck)
-        } catch (err) {
-          setError(err.message)
-        } finally {
-          setLoading(false)
-        }
-      }
-
-      fetchDeck()
-    }, [id])
-
-    const isOwner = user && deck && user.id === deck.user_id
-
-    const handleSync = async () => {
-      setSyncing(true)
-      setSyncStatus(null)
-
+  // Autenticación de usuario
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
       try {
-        const result = await syncDeck(deck.id)
-        setSyncStatus({
-          type: 'success',
-          message: result.hasChanges ? 'Mazo actualizado exitosamente' : 'El mazo ya estaba actualizado',
-          changes: result.changes
-        })
-
-        if (result.hasChanges) {
-          // Recargar datos del mazo
-          const { data: session } = await supabase.auth.getSession()
-          const headers = { 'Content-Type': 'application/json' }
-          if (session.session?.access_token) {
-            headers.Authorization = `Bearer ${session.session.access_token}`
-          }
-          
-          const response = await fetch(`/api/decks/${id}`, { headers })
-          if (response.ok) {
-            const data = await response.json()
-            setDeck(data.deck)
-          }
-        }
+        const { data } = await supabase.auth.getUser()
+        if (mounted) setUser(data.user || null)
       } catch (error) {
-        setSyncStatus({
-          type: 'error',
-          message: error.message || 'Error al sincronizar el mazo'
-        })
-      } finally {
-        setSyncing(false)
+        console.error('Error getting user:', error)
+        if (mounted) setUser(null)
       }
+    })()
+    
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      if (mounted) setUser(session?.user || null)
+    })
+    
+    return () => {
+      mounted = false
+      sub?.subscription?.unsubscribe?.()
     }
+  }, [])
 
-    const handleDelete = async () => {
-      try {
-        await deleteDeck(deck.id)
-        router.push('/decks')
-      } catch (error) {
-        setError(error.message || 'Error al eliminar el mazo')
-      }
-    }
+  // Obtener datos del mazo
+  useEffect(() => {
+    if (!id) return
 
-    const handleRetry = async () => {
-      setLoading(true)
-      setError('')
-      
-      // Reintento de carga
+    const fetchDeck = async () => {
       try {
         const { data: session } = await supabase.auth.getSession()
-        const headers = { 'Content-Type': 'application/json' }
+        const headers = {
+          'Content-Type': 'application/json'
+        }
         
         if (session.session?.access_token) {
           headers.Authorization = `Bearer ${session.session.access_token}`
@@ -3656,12 +3592,11 @@ function ProfessionalDeckStats({ theme, deck }) {
         
         if (!response.ok) {
           const errorData = await response.json()
-          throw new Error(errorData.error || 'Error al cargar el mazo')
+          throw new Error(errorData.error || 'Mazo no encontrado')
         }
 
         const data = await response.json()
         setDeck(data.deck)
-        setError('')
       } catch (err) {
         setError(err.message)
       } finally {
@@ -3669,153 +3604,249 @@ function ProfessionalDeckStats({ theme, deck }) {
       }
     }
 
-    if (loading) {
-      return <ProfessionalLoadingSkeleton theme={theme} />
+    fetchDeck()
+  }, [id])
+
+  const isOwner = user && deck && user.id === deck.user_id
+
+  const handleSync = async () => {
+    setSyncing(true)
+    setSyncStatus(null)
+
+    try {
+      const result = await syncDeck(deck.id)
+      setSyncStatus({
+        type: 'success',
+        message: result.hasChanges ? 'Mazo actualizado exitosamente' : 'El mazo ya estaba actualizado',
+        changes: result.changes
+      })
+
+      if (result.hasChanges) {
+        // Recargar datos del mazo
+        const { data: session } = await supabase.auth.getSession()
+        const headers = { 'Content-Type': 'application/json' }
+        if (session.session?.access_token) {
+          headers.Authorization = `Bearer ${session.session.access_token}`
+        }
+        
+        const response = await fetch(`/api/decks/${id}`, { headers })
+        if (response.ok) {
+          const data = await response.json()
+          setDeck(data.deck)
+        }
+      }
+    } catch (error) {
+      setSyncStatus({
+        type: 'error',
+        message: error.message || 'Error al sincronizar el mazo'
+      })
+    } finally {
+      setSyncing(false)
     }
+  }
 
-    if (error || !deck) {
-      return <ProfessionalErrorState theme={theme} error={error} onRetry={handleRetry} />
+  const handleDelete = async () => {
+    try {
+      await deleteDeck(deck.id)
+      router.push('/decks')
+    } catch (error) {
+      setError(error.message || 'Error al eliminar el mazo')
     }
+  }
 
-    return (
-      <div
-        className="min-h-screen theme-transition pb-20 sm:pb-8"
-        style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}
-      >
-        {/* Elementos decorativos de fondo */}
-        <div className="fixed top-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow" />
-        <div className="fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-white/10 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow" style={{ animationDelay: '3s' }} />
+  const handleRetry = async () => {
+    setLoading(true)
+    setError('')
+    
+    // Reintento de carga
+    try {
+      const { data: session } = await supabase.auth.getSession()
+      const headers = { 'Content-Type': 'application/json' }
+      
+      if (session.session?.access_token) {
+        headers.Authorization = `Bearer ${session.session.access_token}`
+      }
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 space-y-8 sm:space-y-12 lg:space-y-16">
-          {/* Hero Section */}
-          <ProfessionalDeckHero 
-            theme={theme} 
-            deck={deck} 
-            user={user} 
-            onSync={handleSync}
-            onDelete={() => setShowDeleteConfirm(true)}
-            syncing={syncing}
-          />
+      const response = await fetch(`/api/decks/${id}`, { headers })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al cargar el mazo')
+      }
 
-          {/* Estado de Sincronización */}
-          <ProfessionalSyncStatus theme={theme} syncStatus={syncStatus} />
+      const data = await response.json()
+      setDeck(data.deck)
+      setError('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-          {/* Layout Principal */}
-          <div className="grid lg:grid-cols-4 gap-8 lg:gap-12">
-            {/* Sidebar */}
-            <div className="lg:col-span-1 space-y-6">
-              <ProfessionalCommanderInfo theme={theme} deck={deck}/>
-            </div>
+  if (loading) {
+    return <ProfessionalLoadingSkeleton theme={theme} />
+  }
 
-            {/* Contenido Principal */}
-            <div className="lg:col-span-3 space-y-8">
-              <ProfessionalSection
-                title="Información del Mazo"
-                subtitle="Fuente y estado de sincronización"
-                theme={theme}
-                index={0}
-              >
-                <ProfessionalDeckInfoCards theme={theme} deck={deck} />
-              </ProfessionalSection>
+  if (error || !deck) {
+    return <ProfessionalErrorState theme={theme} error={error} onRetry={handleRetry} />
+  }
 
-              <ProfessionalSection
-                title="Cartas del Mazo"
-                subtitle="Análisis detallado y lista completa"
-                theme={theme}
-                index={1}
-              >
-                <ProfessionalDeckCards theme={theme} deck={deck} />
-              </ProfessionalSection>
+  return (
+    <div
+      className="min-h-screen theme-transition pb-20 sm:pb-8"
+      style={{ background: `linear-gradient(135deg, ${theme.backgroundGradient})` }}
+    >
+      {/* Elementos decorativos de fondo */}
+      <div className="fixed top-0 left-0 w-96 h-96 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow" />
+      <div className="fixed bottom-0 right-0 w-96 h-96 bg-gradient-to-l from-white/10 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse-glow" style={{ animationDelay: '3s' }} />
 
-              {isOwner && (
-                <ProfessionalSection
-                  title="Gestión del Mazo"
-                  subtitle="Opciones avanzadas de administración"
-                  theme={theme}
-                  index={2}
-                >
-                  <ProfessionalDangerZone
-                    theme={theme}
-                    deck={deck}
-                    onDelete={() => setShowDeleteConfirm(true)}
-                  />
-                </ProfessionalSection>
-              )}
-            </div>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 space-y-8 sm:space-y-12 lg:space-y-16">
+        {/* Hero Section */}
+        <ProfessionalDeckHero 
+          theme={theme} 
+          deck={deck} 
+          user={user} 
+          onSync={handleSync}
+          onDelete={() => setShowDeleteConfirm(true)}
+          syncing={syncing}
+        />
+
+        {/* Estado de Sincronización */}
+        <ProfessionalSyncStatus theme={theme} syncStatus={syncStatus} />
+
+        {/* Layout Principal */}
+        <div className="grid lg:grid-cols-4 gap-8 lg:gap-12">
+          {/* CORREGIDO: Sidebar con modal centralizado */}
+          <div className="lg:col-span-1 space-y-6">
+            <ProfessionalCommanderInfo 
+              theme={theme} 
+              deck={deck}
+              onImageClick={openModal}  
+            />
           </div>
 
-          {/* Footer Profesional */}
-          <footer className="py-12 text-center">
-            <div className="space-y-6">
-              <div className="flex items-center justify-center gap-4">
-                <span className={`text-sm font-semibold ${theme.text.soft}`}>
-                  Tema actual:
-                </span>
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-5 h-5 rounded-full shadow-lg animate-pulse-glow"
-                    style={{ background: `linear-gradient(45deg, ${theme.colors.primary})` }}
-                  />
-                  <span className={`font-bold text-lg ${theme.text.strong}`}>
-                    {theme.label}
-                  </span>
-                  <button
-                    onClick={togglePause}
-                    className={`ml-2 p-2 rounded-lg transition-colors ${theme.text.soft} hover:${theme.text.strong} hover:bg-white/20`}
-                    title={isPaused ? 'Reanudar rotación automática' : 'Pausar rotación automática'}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      {isPaused ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h8a2 2 0 012 2v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2z" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      )}
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              
-              {/* Indicador de progreso de temas */}
-              <div className="flex items-center justify-center gap-2">
-                {MTG_PROFESSIONAL_THEMES.map((t, i) => (
-                  <button
-                    key={t.key}
-                    onClick={() => switchToTheme && switchToTheme(t.key)}
-                    className={`h-2 rounded-full transition-all duration-500 hover:scale-125 ${
-                      i === themeIndex ? 'w-8 opacity-100' : 'w-2 opacity-40'
-                    }`}
-                    style={{ 
-                      background: `linear-gradient(45deg, ${t.colors.primary})` 
-                    }}
-                    title={t.label}
-                  />
-                ))}
-              </div>
-              
-              <div className="space-y-2">
-                <p className={`text-sm ${theme.text.soft} opacity-75`}>
-                  {isPaused ? 'Rotación automática pausada' : 'Rotación automática cada 40 segundos'}
-                </p>
-                <p className={`text-xs ${theme.text.soft} opacity-60 italic`}>
-                  &quot;{theme.fact}&quot;
-                </p>
-              </div>
-            </div>
-          </footer>
+          {/* Contenido Principal */}
+          <div className="lg:col-span-3 space-y-8">
+            <ProfessionalSection
+              title="Información del Mazo"
+              subtitle="Fuente y estado de sincronización"
+              theme={theme}
+              index={0}
+            >
+              <ProfessionalDeckInfoCards theme={theme} deck={deck} />
+            </ProfessionalSection>
+
+            <ProfessionalSection
+              title="Cartas del Mazo"
+              subtitle="Análisis detallado y lista completa"
+              theme={theme}
+              index={1}
+            >
+              <ProfessionalDeckCards theme={theme} deck={deck} />
+            </ProfessionalSection>
+
+            {isOwner && (
+              <ProfessionalSection
+                title="Gestión del Mazo"
+                subtitle="Opciones avanzadas de administración"
+                theme={theme}
+                index={2}
+              >
+                <ProfessionalDangerZone
+                  theme={theme}
+                  deck={deck}
+                  onDelete={() => setShowDeleteConfirm(true)}
+                />
+              </ProfessionalSection>
+            )}
+          </div>
         </div>
 
-        {/* Modal de confirmación de borrado */}
-        {showDeleteConfirm && (
-          <ProfessionalDeleteModal
-            theme={theme}
-            deckName={deck.name}
-            onConfirm={handleDelete}
-            onCancel={() => setShowDeleteConfirm(false)}
-          />
-        )}
+        {/* Footer Profesional */}
+        <footer className="py-12 text-center">
+          <div className="space-y-6">
+            <div className="flex items-center justify-center gap-4">
+              <span className={`text-sm font-semibold ${theme.text.soft}`}>
+                Tema actual:
+              </span>
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-5 h-5 rounded-full shadow-lg animate-pulse-glow"
+                  style={{ background: `linear-gradient(45deg, ${theme.colors.primary})` }}
+                />
+                <span className={`font-bold text-lg ${theme.text.strong}`}>
+                  {theme.label}
+                </span>
+                <button
+                  onClick={togglePause}
+                  className={`ml-2 p-2 rounded-lg transition-colors ${theme.text.soft} hover:${theme.text.strong} hover:bg-white/20`}
+                  title={isPaused ? 'Reanudar rotación automática' : 'Pausar rotación automática'}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isPaused ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h8a2 2 0 012 2v8a4 4 0 01-4 4H9a2 2 0 01-2-2v-8a2 2 0 012-2z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    )}
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Indicador de progreso de temas */}
+            <div className="flex items-center justify-center gap-2">
+              {MTG_PROFESSIONAL_THEMES.map((t, i) => (
+                <button
+                  key={t.key}
+                  onClick={() => switchToTheme && switchToTheme(t.key)}
+                  className={`h-2 rounded-full transition-all duration-500 hover:scale-125 ${
+                    i === themeIndex ? 'w-8 opacity-100' : 'w-2 opacity-40'
+                  }`}
+                  style={{ 
+                    background: `linear-gradient(45deg, ${t.colors.primary})` 
+                  }}
+                  title={t.label}
+                />
+              ))}
+            </div>
+            
+            <div className="space-y-2">
+              <p className={`text-sm ${theme.text.soft} opacity-75`}>
+                {isPaused ? 'Rotación automática pausada' : 'Rotación automática cada 40 segundos'}
+              </p>
+              <p className={`text-xs ${theme.text.soft} opacity-60 italic`}>
+                "{theme.fact}"
+              </p>
+            </div>
+          </div>
+        </footer>
       </div>
-    )
-  }
+
+      {/* CORREGIDO: Modal único centralizado para toda la aplicación */}
+      <ProfessionalImageModal
+        isOpen={isModalOpen}
+        card={modalCard}
+        onClose={closeModal}
+        imageLoaded={imageLoaded}
+        setImageLoaded={setImageLoaded}
+        imageError={imageError}
+        setImageError={setImageError}
+        theme={theme}
+      />
+
+      {/* Modal de confirmación de borrado */}
+      {showDeleteConfirm && (
+        <ProfessionalDeleteModal
+          theme={theme}
+          deckName={deck.name}
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+    </div>
+  )
+}
 
   /* ===============================================================
     COMPONENTE DE SECCIÓN PROFESIONAL
@@ -3919,236 +3950,210 @@ function ProfessionalDeckStats({ theme, deck }) {
   /* ===============================================================
     COMPONENTE DE INFORMACIÓN DEL COMANDANTE MEJORADO
     =============================================================== */
-  function ProfessionalCommanderInfo({ theme, deck }) {
-    const [imageLoaded, setImageLoaded] = useState(false)
-    const [imageError, setImageError] = useState(false)
-    const [showFullImage, setShowFullImage] = useState(false)
+function ProfessionalCommanderInfo({ theme, deck, onImageClick }) {
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageError, setImageError] = useState(false)
+  
+  const formatColors = (colors) => {
+    if (!colors || colors.length === 0) return 'Incoloro'
+    const colorMap = { W: 'Blanco', U: 'Azul', B: 'Negro', R: 'Rojo', G: 'Verde' }
+    return colors.map(c => colorMap[c] || c).join(', ')
+  }
+
+  const getCommanderImageUrl = () => {
+    if (deck.commander_image) {
+      return deck.commander_image
+    }
     
-    const formatColors = (colors) => {
-      if (!colors || colors.length === 0) return 'Incoloro'
-      const colorMap = { W: 'Blanco', U: 'Azul', B: 'Negro', R: 'Rojo', G: 'Verde' }
-      return colors.map(c => colorMap[c] || c).join(', ')
+    if (deck.commander_scryfall_id) {
+      return `https://api.scryfall.com/cards/${deck.commander_scryfall_id}?format=image&version=normal`
     }
+    
+    return null
+  }
 
-    const getCommanderImageUrl = () => {
-      if (deck.commander_image) {
-        return deck.commander_image
-      }
-      
-      if (deck.commander_scryfall_id) {
-        return `https://api.scryfall.com/cards/${deck.commander_scryfall_id}?format=image&version=normal`
-      }
-      
-      return null
-    }
+  const commanderImageUrl = getCommanderImageUrl()
 
-    const commanderImageUrl = getCommanderImageUrl()
+  // Crear objeto de carta para el modal
+  const commanderCard = {
+    name: deck.commander_name || deck.name,
+    scryfall_id: deck.commander_scryfall_id,
+    image_url: commanderImageUrl,
+    colors: deck.commander_colors || []
+  }
 
-    return (
-      <>
-        <div 
-          className="crystal-card animate-professional-fade-in lg:sticky lg:top-4"
-          style={{ '--glow-color': theme.colors.glowColor, animationDelay: '0.3s' }}
-        >
-          <Card className="relative overflow-hidden bg-white/95 backdrop-blur-sm border border-white/60 shadow-lg hover:shadow-xl transition-all duration-500" padding="md">
-            <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${theme.colors.primary}`} />
-            
-            {/* Header compacto */}
-            <div className="mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${theme.colors.primary} flex items-center justify-center shadow-lg animate-float-subtle`}>
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className={`text-xl font-black ${theme.text.strong} tracking-tight`}>
-                    Información del Mazo
-                  </h2>
-                  <p className={`text-sm ${theme.text.soft} font-medium`}>
-                    Detalles y estadísticas
-                  </p>
-                </div>
-              </div>
+  return (
+    <div 
+      className="crystal-card animate-professional-fade-in lg:sticky lg:top-4"
+      style={{ '--glow-color': theme.colors.glowColor, animationDelay: '0.3s' }}
+    >
+      <Card className="relative overflow-hidden bg-white/95 backdrop-blur-sm border border-white/60 shadow-lg hover:shadow-xl transition-all duration-500" padding="md">
+        <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${theme.colors.primary}`} />
+        
+        {/* Header compacto */}
+        <div className="mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${theme.colors.primary} flex items-center justify-center shadow-lg animate-float-subtle`}>
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-
-            {/* Nombre del comandante - compacto */}
-            {deck.commander_name && (
-              <div className="mb-4 p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 rounded-xl border-2 border-blue-200 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-bold text-blue-800 uppercase tracking-wide">
-                      {deck.format === 'Commander' ? 'Comandante' : 'Carta Principal'}
-                    </span>
-                  </div>
-                </div>
-                <h3 className="text-lg font-black text-gray-900 leading-tight tracking-tight">
-                  {deck.commander_name}
-                </h3>
-              </div>
-            )}
-
-            {/* Imagen compacta */}
-            {commanderImageUrl && (
-              <div className="mb-4">
-                <div 
-                  className="relative group cursor-pointer bg-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
-                  onClick={() => setShowFullImage(true)}
-                >
-                  <div className="relative w-full aspect-[5/7]">
-                    {!imageLoaded && !imageError && (
-                      <div className="absolute inset-0 loading-skeleton rounded-lg" />
-                    )}
-                    
-                    {imageError && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300">
-                        <div className="text-center p-3">
-                          <svg className="w-6 h-6 text-gray-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                          </svg>
-                          <p className="text-xs text-gray-500">No disponible</p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {!imageError && (
-                      <Image
-                        src={commanderImageUrl}
-                        alt={deck.commander_name || deck.name}
-                        fill
-                        className={`object-cover transition-all duration-300 group-hover:scale-105 ${
-                          imageLoaded ? 'opacity-100' : 'opacity-0'
-                        }`}
-                        onLoad={() => setImageLoaded(true)}
-                        onError={() => setImageError(true)}
-                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-                      />
-                    )}
-                    
-                    {/* Overlay simple de hover */}
-                    <div className="absolute inset-0 card-hover-overlay transition-colors duration-300 flex items-center justify-center">
-                      <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform scale-90 group-hover:scale-100">
-                        Ver completa
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Secciones de información compactas */}
-            <div className="space-y-3">
-              {/* Identidad de color - layout horizontal */}
-              {deck.commander_colors && deck.commander_colors.length > 0 && (
-                <div className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
-                      </svg>
-                      <span className="text-sm font-semibold text-gray-800">Identidad de Color</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {deck.commander_colors.map((color, i) => (
-                        <div key={i} className="transform hover:scale-110 transition-transform duration-200">
-                          <ManaSymbol symbol={color} size="md" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Formato - layout horizontal */}
-              <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span className="text-sm font-semibold text-gray-800">Formato</span>
-                  </div>
-                  <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-sm">
-                    {deck.format}
-                  </span>
-                </div>
-              </div>
-
-              {/* Estadísticas - grid compacto */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 text-center">
-                  <div className="text-xl font-bold text-blue-800">{deck.total_cards || 0}</div>
-                  <div className="text-xs text-blue-600 font-semibold">TOTAL</div>
-                </div>
-                <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200 text-center">
-                  <div className="text-xl font-bold text-green-800">{deck.mainboard_count || 0}</div>
-                  <div className="text-xs text-green-600 font-semibold">MAINBOARD</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Acción del footer compacta */}
-            {deck.commander_scryfall_id && (
-              <div className="mt-4 pt-3 border-t border-gray-200">
-                <a
-                  href={`https://scryfall.com/card/${deck.commander_scryfall_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`
-                    w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg 
-                    bg-gradient-to-r ${theme.colors.primary} text-white font-semibold text-sm 
-                    transition-all duration-300 hover:scale-[1.02] hover:shadow-lg 
-                    focus:outline-none focus:ring-2 ${theme.colors.ring}
-                  `}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  Ver en Scryfall
-                </a>
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* Modal de imagen completa liviano */}
-        {showFullImage && commanderImageUrl && (
-          <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 modal-backdrop"
-            onClick={() => setShowFullImage(false)}
-          >
-            <div className="relative max-w-sm sm:max-w-md lg:max-w-lg max-h-[90vh] modal-content">
-              <button
-                onClick={() => setShowFullImage(false)}
-                className="absolute -top-10 right-0 w-8 h-8 bg-white/20 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-white/30 transition-colors z-10"
-                aria-label="Cerrar imagen"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              
-              <div className="relative rounded-xl overflow-hidden shadow-2xl bg-white">
-                <Image
-                  src={commanderImageUrl}
-                  alt={deck.commander_name || deck.name}
-                  width={400}
-                  height={560}
-                  className="w-full h-auto"
-                  priority
-                />
-              </div>
+            <div>
+              <h2 className={`text-xl font-black ${theme.text.strong} tracking-tight`}>
+                Información del Mazo
+              </h2>
+              <p className={`text-sm ${theme.text.soft} font-medium`}>
+                Detalles y estadísticas
+              </p>
             </div>
           </div>
+        </div>
+
+        {/* Nombre del comandante - compacto */}
+        {deck.commander_name && (
+          <div className="mb-4 p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 rounded-xl border-2 border-blue-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-bold text-blue-800 uppercase tracking-wide">
+                  {deck.format === 'Commander' ? 'Comandante' : 'Carta Principal'}
+                </span>
+              </div>
+            </div>
+            <h3 className="text-lg font-black text-gray-900 leading-tight tracking-tight">
+              {deck.commander_name}
+            </h3>
+          </div>
         )}
-      </>
-    )
-  }
+
+        {/* Imagen que usa el modal centralizado */}
+        {commanderImageUrl && (
+          <div className="mb-4">
+            <button
+              onClick={() => onImageClick && onImageClick(commanderCard)}
+              className="relative group cursor-pointer bg-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 w-full"
+            >
+              <div className="relative w-full aspect-[5/7]">
+                {!imageLoaded && !imageError && (
+                  <div className="absolute inset-0 loading-skeleton rounded-lg" />
+                )}
+                
+                {imageError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50 border border-dashed border-gray-300">
+                    <div className="text-center p-3">
+                      <svg className="w-6 h-6 text-gray-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <p className="text-xs text-gray-500">No disponible</p>
+                    </div>
+                  </div>
+                )}
+                
+                {!imageError && (
+                  <Image
+                    src={commanderImageUrl}
+                    alt={deck.commander_name || deck.name}
+                    fill
+                    className={`object-cover transition-all duration-300 group-hover:scale-105 ${
+                      imageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageError(true)}
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+                  />
+                )}
+                
+                {/* Overlay simple de hover */}
+                <div className="absolute inset-0 card-hover-overlay transition-colors duration-300 flex items-center justify-center">
+                  <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform scale-90 group-hover:scale-100">
+                    Ver completa
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* Secciones de información compactas */}
+        <div className="space-y-3">
+          {/* Identidad de color - layout horizontal */}
+          {deck.commander_colors && deck.commander_colors.length > 0 && (
+            <div className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
+                  </svg>
+                  <span className="text-sm font-semibold text-gray-800">Identidad de Color</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {deck.commander_colors.map((color, i) => (
+                    <div key={i} className="transform hover:scale-110 transition-transform duration-200">
+                      <ManaSymbol symbol={color} size="md" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Formato - layout horizontal */}
+          <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-sm font-semibold text-gray-800">Formato</span>
+              </div>
+              <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-sm">
+                {deck.format}
+              </span>
+            </div>
+          </div>
+
+          {/* Estadísticas - grid compacto */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 text-center">
+              <div className="text-xl font-bold text-blue-800">{deck.total_cards || 0}</div>
+              <div className="text-xs text-blue-600 font-semibold">TOTAL</div>
+            </div>
+            <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200 text-center">
+              <div className="text-xl font-bold text-green-800">{deck.mainboard_count || 0}</div>
+              <div className="text-xs text-green-600 font-semibold">MAINBOARD</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Acción del footer compacta */}
+        {deck.commander_scryfall_id && (
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <a
+              href={`https://scryfall.com/card/${deck.commander_scryfall_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`
+                w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg 
+                bg-gradient-to-r ${theme.colors.primary} text-white font-semibold text-sm 
+                transition-all duration-300 hover:scale-[1.02] hover:shadow-lg 
+                focus:outline-none focus:ring-2 ${theme.colors.ring}
+              `}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Ver en Scryfall
+            </a>
+          </div>
+        )}
+      </Card>
+    </div>
+  )
+}
 
   /* ===============================================================
     COMPONENTE DE ZONA PELIGROSA MEJORADO
