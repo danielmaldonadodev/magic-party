@@ -6,6 +6,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'cards.scryfall.io' },
       { protocol: 'https', hostname: 'img.scryfall.com' },
+      { protocol: 'https', hostname: 'api.scryfall.com' }, // Agregar esta línea
       { protocol: 'https', hostname: SUPABASE_HOST, pathname: '/storage/v1/object/**' }
     ]
   }
