@@ -2,6 +2,55 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 
+// COMPONENTES FALTANTES - Agregar al inicio
+const Card = ({ children, className = "", padding = "none", ...props }) => {
+  const paddingClasses = {
+    none: '',
+    sm: 'p-3',
+    md: 'p-4',
+    lg: 'p-6',
+    xl: 'p-8'
+  }
+  
+  return (
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${paddingClasses[padding]} ${className}`} {...props}>
+      {children}
+    </div>
+  )
+}
+
+const ManaSymbol = ({ symbol, size = "sm" }) => {
+  const sizeClasses = {
+    sm: 'w-4 h-4 text-xs',
+    md: 'w-6 h-6 text-sm',
+    lg: 'w-8 h-8 text-base'
+  }
+  
+  const colorClasses = {
+    W: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    U: 'bg-blue-100 text-blue-800 border-blue-300',
+    B: 'bg-gray-800 text-white border-gray-600',
+    R: 'bg-red-100 text-red-800 border-red-300',
+    G: 'bg-green-100 text-green-800 border-green-300',
+    C: 'bg-gray-100 text-gray-800 border-gray-300'
+  }
+  
+  // Si es un número
+  if (!isNaN(symbol) && symbol !== '') {
+    return (
+      <div className={`${sizeClasses[size]} rounded-full border-2 bg-gray-100 text-gray-800 border-gray-300 flex items-center justify-center font-bold`}>
+        {symbol}
+      </div>
+    )
+  }
+  
+  return (
+    <div className={`${sizeClasses[size]} rounded-full border-2 flex items-center justify-center font-bold ${colorClasses[symbol] || colorClasses.C}`}>
+      {symbol}
+    </div>
+  )
+}
+
 /* ===============================================================
   COMPONENTE PRINCIPAL DE LISTA DE CARTAS
   =============================================================== */
@@ -11,11 +60,11 @@ function ProfessionalCardList({ theme, cards, title, totalCount, uniqueCount }) 
   const [filterType, setFilterType] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   
-  if (!cards || cards.length === 0) return null
-
-  // Procesar y filtrar cartas
+  // ✅ CORRECCIÓN: TODOS los useMemo ANTES del return temprano
   const processedCards = useMemo(() => {
-    let filtered = cards
+    if (!cards || cards.length === 0) return []
+    
+    let filtered = [...cards] // Crear copia para evitar mutaciones
 
     // Filtro de búsqueda
     if (searchTerm) {
@@ -49,10 +98,14 @@ function ProfessionalCardList({ theme, cards, title, totalCount, uniqueCount }) 
     return filtered
   }, [cards, searchTerm, filterType, sortBy])
 
-  const displayCards = showAll ? processedCards : processedCards.slice(0, 10)
+  const displayCards = useMemo(() => {
+    return showAll ? processedCards : processedCards.slice(0, 10)
+  }, [showAll, processedCards])
 
   // Obtener tipos únicos para el filtro
   const cardTypes = useMemo(() => {
+    if (!cards || cards.length === 0) return []
+    
     const types = new Set()
     cards.forEach(card => {
       const typeLine = card.type_line || ''
@@ -69,6 +122,8 @@ function ProfessionalCardList({ theme, cards, title, totalCount, uniqueCount }) 
 
   // Estadísticas por tipo
   const typeStats = useMemo(() => {
+    if (!cards || cards.length === 0) return {}
+    
     const stats = {}
     cards.forEach(card => {
       const typeLine = card.type_line || ''
@@ -90,6 +145,9 @@ function ProfessionalCardList({ theme, cards, title, totalCount, uniqueCount }) 
     })
     return stats
   }, [cards])
+
+  // ✅ AHORA es seguro hacer el return temprano
+  if (!cards || cards.length === 0) return null
 
   return (
     <div 
@@ -235,9 +293,11 @@ function CardListItem({ card, theme }) {
   const formatManaCost = (manaCost) => {
     if (!manaCost) return null
     // Convertir {1}{R}{R} a elementos visuales
-    return manaCost.replace(/\{([^}]+)\}/g, '$1').split('').map((symbol, i) => (
-      <ManaSymbol key={i} symbol={symbol} size="sm" />
-    ))
+    const symbols = manaCost.match(/\{([^}]+)\}/g) || []
+    return symbols.map((symbol, i) => {
+      const cleanSymbol = symbol.replace(/[{}]/g, '')
+      return <ManaSymbol key={i} symbol={cleanSymbol} size="sm" />
+    })
   }
 
   const getTypeColor = (typeLine) => {
@@ -363,13 +423,23 @@ function CardListItem({ card, theme }) {
   COMPONENTE DE ESTADÍSTICAS AVANZADAS
   =============================================================== */
 function ProfessionalDeckStats({ theme, deck }) {
-  if (!deck.deck_cards || deck.deck_cards.length === 0) return null
+  const mainboard = deck.deck_cards?.filter(dc => dc.board_type === 'mainboard') || []
+  const sideboard = deck.deck_cards?.filter(dc => dc.board_type === 'sideboard') || []
 
-  const mainboard = deck.deck_cards.filter(dc => dc.board_type === 'mainboard')
-  const sideboard = deck.deck_cards.filter(dc => dc.board_type === 'sideboard')
-
-  // Calcular estadísticas
+  // ✅ CORRECCIÓN: useMemo ANTES del return temprano
   const stats = useMemo(() => {
+    if (!deck.deck_cards || deck.deck_cards.length === 0) {
+      return {
+        cmcDistribution: {},
+        colorDistribution: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 },
+        typeDistribution: {},
+        avgCmc: 0,
+        creatureCount: 0,
+        nonCreatureCount: 0,
+        totalCards: 0
+      }
+    }
+
     const cmcDistribution = {}
     const colorDistribution = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }
     const typeDistribution = {}
@@ -429,7 +499,10 @@ function ProfessionalDeckStats({ theme, deck }) {
       nonCreatureCount,
       totalCards
     }
-  }, [mainboard])
+  }, [mainboard, deck.deck_cards])
+
+  // ✅ AHORA es seguro hacer el return temprano
+  if (!deck.deck_cards || deck.deck_cards.length === 0) return null
 
   return (
     <div 
@@ -455,7 +528,7 @@ function ProfessionalDeckStats({ theme, deck }) {
                       <div className="flex-1 bg-gray-200 rounded-full h-4 relative overflow-hidden">
                         <div 
                           className={`h-full rounded-full transition-all duration-500 ${theme.gradient}`}
-                          style={{ width: `${(count / stats.totalCards) * 100}%` }}
+                          style={{ width: `${stats.totalCards > 0 ? (count / stats.totalCards) * 100 : 0}%` }}
                         />
                       </div>
                       <span className="w-8 text-sm font-medium text-right">{count}</span>

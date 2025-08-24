@@ -16,6 +16,40 @@ import { translateTypeLine } from '../../lib/mtgTranslate'
 import useCardImage from "../../hooks/useCardImage"
 import { Copy, Check, X, FileText, Link2, List, ChevronDown, Download, Mail, Archive } from 'lucide-react'
 
+// COMPONENTES FALTANTES - Agregar después de los imports
+const Card = ({ children, className = "", padding = "md", ...props }) => {
+  const paddingClasses = {
+    sm: 'p-3',
+    md: 'p-4', 
+    lg: 'p-6',
+    xl: 'p-8'
+  }
+  return (
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${paddingClasses[padding]} ${className}`} {...props}>
+      {children}
+    </div>
+  )
+}
+
+const ManaSymbol = ({ symbol, size = "md" }) => {
+  const sizeClasses = {
+    sm: 'w-4 h-4',
+    md: 'w-6 h-6', 
+    lg: 'w-8 h-8'
+  }
+  const colorClasses = {
+    W: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    U: 'bg-blue-100 text-blue-800 border-blue-300',
+    B: 'bg-gray-800 text-white border-gray-600',
+    R: 'bg-red-100 text-red-800 border-red-300',
+    G: 'bg-green-100 text-green-800 border-green-300'
+  }
+  return (
+    <div className={`${sizeClasses[size]} rounded-full border-2 flex items-center justify-center font-bold text-xs ${colorClasses[symbol] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
+      {symbol}
+    </div>
+  )
+}
 
 /* ===============================================================
   TEMAS PROFESIONALES MEJORADOS CON NUEVAS ANIMACIONES
@@ -635,7 +669,7 @@ function useImageModal() {
     return () => {
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [isOpen, closeModal])
+  }, [isOpen, closeModal]) // Incluir closeModal en dependencias
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1132,10 +1166,12 @@ function ProfessionalCardList({ theme, cards, title, totalCount, uniqueCount }) 
   if (!cards || cards.length === 0) return null
 
   // Procesar y filtrar cartas con memoización mejorada
-  const processedCards = useMemo(() => {
-    let filtered = [...cards] // Crear copia para evitar mutaciones
+const processedCards = useMemo(() => {
+    if (!cards || cards.length === 0) return []
 
-    // Filtro de búsqueda mejorado
+    let filtered = [...cards]
+
+// Filtro de búsqueda mejorado
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim()
       filtered = filtered.filter(card => 
@@ -1160,7 +1196,7 @@ function ProfessionalCardList({ theme, cards, title, totalCount, uniqueCount }) 
           const cmcA = a.cmc || 0
           const cmcB = b.cmc || 0
           if (cmcA !== cmcB) return cmcA - cmcB
-          return (a.name || '').localeCompare(b.name || '') // Fallback alfabético
+          return (a.name || '').localeCompare(b.name || '')
         case 'quantity':
           const qtyA = a.quantity || 0
           const qtyB = b.quantity || 0
@@ -1177,13 +1213,15 @@ function ProfessionalCardList({ theme, cards, title, totalCount, uniqueCount }) 
           const rarityB = rarityOrder[b.rarity] || 0
           if (rarityA !== rarityB) return rarityB - rarityA
           return (a.name || '').localeCompare(b.name || '')
-        default: // 'name'
+        default:
           return (a.name || '').localeCompare(b.name || '')
       }
     })
 
     return filtered
   }, [cards, searchTerm, filterType, sortBy])
+
+  if (!cards || cards.length === 0) return null
 
   const displayCards = showAll ? processedCards : processedCards.slice(0, 10)
 
