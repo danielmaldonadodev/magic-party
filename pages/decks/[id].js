@@ -1131,15 +1131,15 @@ function ProfessionalCardList({ theme, cards, title, totalCount, uniqueCount }) 
     closeModal
   } = useImageModal()
   
-  if (!cards || cards.length === 0) return null
-
+  // TODOS LOS HOOKS DEBEN IR ANTES DE CUALQUIER RETURN CONDICIONAL
+  
   // Procesar y filtrar cartas con memoización mejorada
-const processedCards = useMemo(() => {
+  const processedCards = useMemo(() => {
     if (!cards || cards.length === 0) return []
 
     let filtered = [...cards]
 
-// Filtro de búsqueda mejorado
+    // Filtro de búsqueda mejorado
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim()
       filtered = filtered.filter(card => 
@@ -1189,12 +1189,10 @@ const processedCards = useMemo(() => {
     return filtered
   }, [cards, searchTerm, filterType, sortBy])
 
-  if (!cards || cards.length === 0) return null
-
-  const displayCards = showAll ? processedCards : processedCards.slice(0, 10)
-
   // Obtener tipos únicos para el filtro
   const cardTypes = useMemo(() => {
+    if (!cards || cards.length === 0) return []
+    
     const types = new Set()
     cards.forEach(card => {
       const translatedTypeLine = translateTypeLine(card.type_line) || ''
@@ -1212,6 +1210,8 @@ const processedCards = useMemo(() => {
 
   // Estadísticas por tipo mejoradas
   const typeStats = useMemo(() => {
+    if (!cards || cards.length === 0) return {}
+    
     const stats = {}
     cards.forEach(card => {
       const translatedTypeLine = translateTypeLine(card.type_line) || ''
@@ -1233,6 +1233,13 @@ const processedCards = useMemo(() => {
     })
     return stats
   }, [cards])
+
+  const displayCards = useMemo(() => {
+    return showAll ? processedCards : processedCards.slice(0, 10)
+  }, [showAll, processedCards])
+
+  // AHORA SÍ PODEMOS HACER EL RETURN CONDICIONAL
+  if (!cards || cards.length === 0) return null
 
   return (
     <>
