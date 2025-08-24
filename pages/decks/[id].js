@@ -3816,7 +3816,7 @@ export default function EnhancedProfessionalDeckDetailPage() {
                 {isPaused ? 'Rotación automática pausada' : 'Rotación automática cada 40 segundos'}
               </p>
               <p className={`text-xs ${theme.text.soft} opacity-60 italic`}>
-                "{theme.fact}"
+                &quot;{theme.fact}&quot;
               </p>
             </div>
           </div>
