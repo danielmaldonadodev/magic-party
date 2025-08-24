@@ -3797,7 +3797,7 @@ function ProfessionalDeckStats({ theme, deck }) {
                   {isPaused ? 'Rotación automática pausada' : 'Rotación automática cada 40 segundos'}
                 </p>
                 <p className={`text-xs ${theme.text.soft} opacity-60 italic`}>
-                  "{theme.fact}"
+                  &quot;{theme.fact}&quot;
                 </p>
               </div>
             </div>
@@ -4213,7 +4213,7 @@ function ProfessionalDeckStats({ theme, deck }) {
               
               <div className="bg-red-50 rounded-xl p-4 border border-red-200 mb-6">
                 <p className="text-gray-700 leading-relaxed">
-                  ¿Estás seguro de que quieres eliminar <strong className="text-red-700">"{deckName}"</strong>?  
+                  ¿Estás seguro de que quieres eliminar <strong className="text-red-700">&quot;{deckName}&quot;</strong>?  
                   Esta acción no se puede deshacer y se perderán todos los datos asociados.
                 </p>
               </div>
