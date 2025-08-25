@@ -1693,26 +1693,6 @@ export default function ProfessionalDecksPage({ initialDecks = [], initialPagina
         {/* Hero Section */}
         <ProfessionalDecksHero theme={theme} user={user} totalDecks={pagination.total || 0} />
 
-        {/* Filtros */}
-        <ProfessionalDecksFilters 
-          theme={theme}
-          filters={filters}
-          onFiltersChange={handleFilterChange}
-          userLoggedIn={!!user}
-          loading={loading}
-        />
-
-        {/* Estadísticas */}
-        <ProfessionalDecksStats 
-          theme={theme} 
-          totalDecks={pagination.total || 0} 
-          loading={loading}
-          additionalStats={{
-            formats: 8,
-            commanders: decks.length > 0 ? `${Math.min(500, decks.length * 10)}+` : '500+'
-          }}
-        />
-
         {/* Contenido principal */}
         <div id="decks-content" className="space-y-8">
           {/* Mostrar error si existe pero hay mazos cargados */}
@@ -1842,7 +1822,7 @@ export default function ProfessionalDecksPage({ initialDecks = [], initialPagina
                 {isPaused ? 'Rotación automática pausada' : 'El tema cambia automáticamente cada 40 segundos'}
               </p>
               <p className={`text-xs ${theme.text.soft} opacity-60 italic`}>
-                "{theme.fact}"
+                &quot;{theme.fact}&quot;
               </p>
             </div>
           </div>
